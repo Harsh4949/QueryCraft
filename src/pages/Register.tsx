@@ -27,7 +27,7 @@ const handleRegister = async (e: React.FormEvent) => {
   }
 
   try {
-    const response = await fetch("http://localhost:3000/register", {
+    const response = await fetch("https://sql-ai-backend-hosted.onrender.com/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,7 +42,7 @@ const handleRegister = async (e: React.FormEvent) => {
 
     if (response.ok) {
       localStorage.setItem("token", data.token);
-      alert("Registration successful!");
+      console.log("Registration successful!");
       navigate("/dashboard");  
     } else {
       alert(data.message || "Registration failed");

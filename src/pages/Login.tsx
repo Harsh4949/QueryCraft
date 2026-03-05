@@ -20,7 +20,7 @@ const Login = () => {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:3000/login", {
+            const response = await fetch("https://sql-ai-backend-hosted.onrender.com/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -40,7 +40,6 @@ const Login = () => {
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 console.log("Login successful:", data.token);
-                alert("Login successful!");
                 navigate("/dashboard");
             } else {
                 alert(data.message || "Login failed");

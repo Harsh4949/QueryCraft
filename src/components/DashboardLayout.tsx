@@ -38,7 +38,7 @@ const DashboardLayout = () => {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/schema", {
+      const res = await fetch("https://sql-ai-backend-hosted.onrender.com/schema", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

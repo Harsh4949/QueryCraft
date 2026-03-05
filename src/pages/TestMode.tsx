@@ -47,7 +47,7 @@ const TestMode = () => {
           return;
         }
 
-        const response = await fetch("http://localhost:3000/execute", {
+        const response = await fetch("https://sql-ai-backend-hosted.onrender.com/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ query: autoSQL }),
@@ -91,7 +91,7 @@ const TestMode = () => {
   try {
     setIsRunning(true);
 
-    const response = await fetch("http://localhost:3000/execute", {
+    const response = await fetch("https://sql-ai-backend-hosted.onrender.com/execute", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ query: sqlInput }),
