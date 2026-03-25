@@ -9,6 +9,7 @@ import {
   Code2,
   Database,
   FlaskConical,
+  Terminal,
   Zap,
 } from "@/components/icons";
 
@@ -44,7 +45,7 @@ const features = [
 ];
 
 const quickStats = [
-  { label: "Learning Modes", value: "2", icon: BookOpen },
+  { label: "Learning Modes", value: "3", icon: BookOpen },
   { label: "Built-in Tutorials", value: "10+", icon: Code2 },
   { label: "Practice Tracking", value: "Live", icon: BarChart3 },
   { label: "Start Time", value: "< 1 min", icon: Clock },
@@ -162,13 +163,13 @@ const Landing = () => {
       <section className="py-20 bg-muted/40">
         <div className="container mx-auto px-4">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Two focused modes to master SQL</h2>
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Three focused modes to master SQL</h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Choose your path — learn conceptually or practice like an interview.
+              Choose your path — learn concepts, practice queries, or build complete SQL-backed projects.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Link to="/learn" className="group">
               <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 gradient-primary" />
@@ -197,6 +198,22 @@ const Landing = () => {
                 </p>
                 <span className="inline-flex items-center gap-1 text-secondary font-medium text-sm group-hover:gap-2 transition-all">
                   Practice Now <ArrowRight className="w-4 h-4" />
+                </span>
+              </div>
+            </Link>
+
+            <Link to="/developer" className="group">
+              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 gradient-primary" />
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
+                  <Terminal className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-foreground mb-2">Developer Mode</h3>
+                <p className="text-muted-foreground mb-4">
+                  Design schema, connect project APIs, and use ready SQL packs to build end-to-end projects.
+                </p>
+                <span className="inline-flex items-center gap-1 text-accent font-medium text-sm group-hover:gap-2 transition-all">
+                  Build Project <ArrowRight className="w-4 h-4" />
                 </span>
               </div>
             </Link>
