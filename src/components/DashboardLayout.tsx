@@ -2,6 +2,7 @@ import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Database,
+  Terminal,
   BookOpen,
   FlaskConical,
   BarChart3,
@@ -16,8 +17,10 @@ import { DatabaseContext } from "@/context/DatabaseContext";
 import { getApiBaseUrl } from "@/lib/appSettings";
 
 const sidebarItems = [
+  { icon: Database, label: "Dashboard", path: "/dashboard" },
   { icon: BookOpen, label: "Learn Mode", path: "/learn" },
   { icon: FlaskConical, label: "Test Mode", path: "/test" },
+  { icon: Terminal, label: "Developer Mode", path: "/developer" },
   { icon: GraduationCap, label: "Tutorials", path: "/tutorials" },
   { icon: BarChart3, label: "My Progress", path: "/progress" },
   { icon: Settings, label: "Settings", path: "/settings" },

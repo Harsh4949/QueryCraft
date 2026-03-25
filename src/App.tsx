@@ -10,6 +10,7 @@ import DashboardHome from "@/pages/DashboardHome";
 import LearnMode from "@/pages/LearnMode";
 import TestMode from "@/pages/TestMode";
 import Tutorials from "@/pages/Tutorials";
+import DeveloperMode from "@/pages/DeveloperMode";
 import Progress from "@/pages/Progress";
 import SettingsPage from "@/pages/Settings";
 import Login from "./pages/Login";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/learn" element={<LearnMode />} />
             <Route path="/test" element={<TestMode />} />
+            <Route path="/developer" element={<DeveloperMode />} />
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/settings" element={<SettingsPage />} />
