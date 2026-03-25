@@ -85,7 +85,19 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
+    "vite": "^8.0.2",
     "vitest": "^3.2.4"
-  }
+  },
+  "description": "## Project info",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OmRAtnure/QueryCraft.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OmRAtnure/QueryCraft/issues"
+  },
+  "homepage": "https://github.com/OmRAtnure/QueryCraft#readme"
 }
