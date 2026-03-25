@@ -1,12 +1,44 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Database, BookOpen, FlaskConical, User, LogOut, Menu } from "@/components/icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  // Keep auth user visible on landing navbar and hide login/signup after authentication.
+  useEffect(() => {
+    const syncUserFromToken = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUserName(null);
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1] || ""));
+        setUserName(payload.username || payload.name || payload.email || "User");
+      } catch {
+        setUserName("User");
+      }
+    };
+
+    syncUserFromToken();
+    window.addEventListener("storage", syncUserFromToken);
+
+    return () => {
+      window.removeEventListener("storage", syncUserFromToken);
+    };
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUserName(null);
+    setMobileOpen(false);
+  };
 
   if (!isLanding) {
     return null;
@@ -30,12 +62,21 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Log In</Link>
-          </Button>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/register">Get Started</Link>
-          </Button>
+          {userName ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+              <User className="w-4 h-4" />
+              <span className="max-w-[150px] truncate">{userName}</span>
+            </div>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Log In</Link>
+              </Button>
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/register">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -50,9 +91,28 @@ const Navbar = () => {
             <Link to="/dashboard" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Dashboard</Link>
             <Link to="/learn" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Learn</Link>
             <Link to="/test" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Test</Link>
-            <Button variant="hero" size="sm" className="mt-2" asChild>
-              <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Get Started</Link>
-            </Button>
+
+            {userName ? (
+              <div className="mt-2 space-y-2">
+                <div className="inline-flex w-full items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+                  <User className="w-4 h-4" />
+                  <span className="truncate">{userName}</span>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
+                  Log Out
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>Log In</Link>
+                </Button>
+                <Button variant="hero" size="sm" asChild>
+                  <Link to="/register" onClick={() => setMobileOpen(false)}>Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -61,3 +121,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+// File use case:
+// Navbar controls landing-page top navigation and authentication actions.
+// It conditionally hides login/signup when the user is authenticated and shows the current username instead.
