@@ -4,6 +4,7 @@ import { Lightbulb, ArrowRight, AlertCircle, Table2 } from "@/components/icons";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { useNavigate } from "react-router";
 import { recordProgressAttempt } from "@/lib/progress";
+import { getApiBaseUrl, getAppSettings } from "@/lib/appSettings";
 
 // const sampleResults = [
 //   { id: 1, name: "Alice", email: "alice@example.com", age: 28 },
@@ -21,6 +22,7 @@ const LearnMode = () => {
   const [aiMessage, setAiMessage] = useState("");
   const [isRunnable, setIsRunnable] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
+  const tableSettings = getAppSettings();
   const navigate = useNavigate();
 
   const { refreshTables } = useContext(DatabaseContext);
@@ -69,6 +71,8 @@ const LearnMode = () => {
 const handleConvert = async () => {
   if (!englishInput.trim()) return;
   const startedAt = Date.now();
+  const currentSettings = getAppSettings();
+  const baseUrl = getApiBaseUrl();
 
   try {
     setIsConverting(true);
@@ -90,7 +94,7 @@ const handleConvert = async () => {
       return;
     }
 
-    const response = await fetch("https://sql-ai-backend-hosted.onrender.com/query", {
+    const response = await fetch(`${baseUrl}/query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -133,7 +137,7 @@ const handleConvert = async () => {
     // 🟢 IF RUNNABLE
     setIsRunnable(true);
     setSqlOutput(data.generatedSQL);
-    setResults(data.data || []);
+    setResults((data.data || []).slice(0, currentSettings.resultRowLimit));
 
     // Refresh schema if table created/dropped
     if (data.schemaChanged) {
@@ -147,6 +151,15 @@ const handleConvert = async () => {
       rowsReturned: (data.data || []).length,
       sourceText: data.generatedSQL || englishInput,
     });
+
+    if (currentSettings.autoRunConvertedSql) {
+      setStatusMessage("Attempt tracked. Redirecting to Test Mode...");
+      navigate("/test", {
+        state: { autoSQL: data.generatedSQL },
+      });
+      return;
+    }
+
     setStatusMessage("Attempt tracked in Progress dashboard.");
 
   } catch (error) {
@@ -249,38 +262,48 @@ const handleConvert = async () => {
             ) : (
               <div className="h-full">
               {hasConverted ? (
-                <div className="max-h-[30rem] overflow-auto rounded-lg border border-border animate-fade-in">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr className="border-b border-border">
-                        {results.length > 0 &&
-                          Object.keys(results[0]).map((key) => (
-                            <th
-                              key={key}
-                              className="sticky top-0 z-10 bg-muted/100 px-4 py-2 text-left font-heading font-semibold text-foreground text-xs uppercase tracking-wider"
-                            >
-                              {key}
-                            </th>
-                          ))}
-                      </tr>
-                    </thead>
-                        
-                    <tbody>
-                      {results.map((row) => (
-                        <tr
-                          key={row.id}
-                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                        >
-                          {Object.values(row).map((val, i) => (
-                            <td key={i} className="px-4 py-2.5 text-foreground">
-                              {String(val ?? "")}
-                            </td>
-                          ))}
+                <>
+                  <div className="max-h-[30rem] overflow-auto rounded-lg border border-border animate-fade-in">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr className="border-b border-border">
+                          {results.length > 0 &&
+                            Object.keys(results[0]).map((key) => (
+                              <th
+                                key={key}
+                                className="sticky top-0 z-10 bg-muted/100 px-4 py-2 text-left font-heading font-semibold text-foreground text-xs uppercase tracking-wider"
+                              >
+                                {key}
+                              </th>
+                            ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+
+                      <tbody>
+                        {results.map((row) => (
+                          <tr
+                            key={row.id}
+                            className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                          >
+                            {Object.values(row).map((val, i) => (
+                              <td
+                                key={i}
+                                className={`text-foreground ${tableSettings.compactTable ? "px-3 py-1.5 text-xs" : "px-4 py-2.5"}`}
+                              >
+                                {val == null && tableSettings.showNullAsDash ? "-" : String(val ?? "")}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {results.length >= tableSettings.resultRowLimit && (
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      Showing first {tableSettings.resultRowLimit} rows based on your Settings.
+                    </p>
+                  )}
+                </>
                 ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                   <Table2 className="w-5 h-5 mr-2" />
@@ -317,3 +340,5 @@ export default LearnMode;
 // File use case:
 // LearnMode converts plain English into SQL and executes it through backend APIs.
 // It now records each attempt so the Progress page reflects real user activity.
+// This file also respects user settings for API URL, result table rendering, and optional auto-run flow.
+// This file also respects user settings for API URL, result table rendering, and optional auto-run flow.

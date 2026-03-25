@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useContext } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { recordProgressAttempt } from "@/lib/progress";
+import { getApiBaseUrl, getAppSettings } from "@/lib/appSettings";
 
 
 
@@ -29,10 +30,16 @@ const TestMode = () => {
   const [results, setResults] = useState<any[]>([]);
   const [runMessage, setRunMessage] = useState("");
   const [runError, setRunError] = useState(false);
+  const tableSettings = getAppSettings();
   
   const { refreshTables } = useContext(DatabaseContext);
  const location = useLocation();
  const navigate = useNavigate();
+
+ const isDangerousSql = (sql: string) => {
+  const normalized = sql.trim().toLowerCase();
+  return /\b(delete|drop|truncate|alter)\b/.test(normalized);
+ };
   
   useEffect(() => {
   if (location.state?.autoSQL) {
@@ -40,6 +47,8 @@ const TestMode = () => {
 
     const runAutoQuery = async () => {
       const startedAt = Date.now();
+      const baseUrl = getApiBaseUrl();
+      const settings = getAppSettings();
       try {
         setSqlInput(autoSQL);
         setIsRunning(true);
@@ -53,7 +62,17 @@ const TestMode = () => {
           return;
         }
 
-        const response = await fetch("https://sql-ai-backend-hosted.onrender.com/execute", {
+        if (settings.confirmDangerousQueries && isDangerousSql(autoSQL)) {
+          const approved = window.confirm("This query looks destructive. Do you want to continue?");
+          if (!approved) {
+            setIsRunning(false);
+            setRunError(true);
+            setRunMessage("Execution canceled by user.");
+            return;
+          }
+        }
+
+        const response = await fetch(`${baseUrl}/execute`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ query: autoSQL }),
@@ -66,7 +85,7 @@ const TestMode = () => {
         if (!response.ok) {
           throw new Error(data.error || "Failed to execute SQL query");
         }
-        setResults(data.data || []);
+        setResults((data.data || []).slice(0, settings.resultRowLimit));
         setHasRun(true);
         setRunMessage("Attempt tracked in Progress dashboard.");
 
@@ -114,17 +133,29 @@ const TestMode = () => {
   const handleRun = async () => {
   if (!sqlInput.trim()) return;
   const startedAt = Date.now();
+  const baseUrl = getApiBaseUrl();
+  const settings = getAppSettings();
   const token = localStorage.getItem("token");
   if (!token) {
     alert("You must be logged in to run this query.");
     return;
   }
+
+  if (settings.confirmDangerousQueries && isDangerousSql(sqlInput)) {
+    const approved = window.confirm("This query looks destructive. Do you want to continue?");
+    if (!approved) {
+      setRunError(true);
+      setRunMessage("Execution canceled by user.");
+      return;
+    }
+  }
+
   try {
     setIsRunning(true);
     setRunMessage("");
     setRunError(false);
 
-    const response = await fetch("https://sql-ai-backend-hosted.onrender.com/execute", {
+    const response = await fetch(`${baseUrl}/execute`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ query: sqlInput }),
@@ -139,7 +170,7 @@ const TestMode = () => {
       throw new Error(data.error || "Failed to execute SQL query");
     }
 
-    setResults(data.data || []);
+    setResults((data.data || []).slice(0, settings.resultRowLimit));
     setHasRun(true);
     setRunMessage("Attempt tracked in Progress dashboard.");
     console.log("Query results:", data);
@@ -248,13 +279,23 @@ const TestMode = () => {
                     {results.map((row, i) => (
                       <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         {Object.values(row).map((val, j) => (
-                          <td key={j} className="px-4 py-2.5 text-foreground">{val}</td>
+                          <td
+                            key={j}
+                            className={`text-foreground ${tableSettings.compactTable ? "px-3 py-1.5 text-xs" : "px-4 py-2.5"}`}
+                          >
+                            {val == null && tableSettings.showNullAsDash ? "-" : String(val ?? "")}
+                          </td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {results.length >= tableSettings.resultRowLimit && (
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  Showing first {tableSettings.resultRowLimit} rows based on your Settings.
+                </p>
+              )}
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-accent text-xs">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {/* Query executed in 0.12s — 3 rows returned */}
@@ -279,3 +320,4 @@ export default TestMode;
 // File use case:
 // TestMode runs raw SQL queries and displays result sets for practice.
 // It now logs each attempt to progress tracking for analytics and streak insights.
+// This file also enforces query-safety confirmation and table display preferences from Settings.

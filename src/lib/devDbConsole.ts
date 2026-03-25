@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/appSettings";
+
 type QueryResponse = {
   data?: unknown[];
   message?: string;
@@ -17,8 +19,6 @@ type SchemaInfo = {
   tableNames: string[];
 };
 
-const DEFAULT_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || "https://sql-ai-backend-hosted.onrender.com";
-
 async function executeSql(query: string, options?: QueryOptions): Promise<QueryResponse> {
   if (!query || !query.trim()) {
     throw new Error("Query is required");
@@ -29,7 +29,7 @@ async function executeSql(query: string, options?: QueryOptions): Promise<QueryR
     throw new Error("Token not found. Please login first.");
   }
 
-  const response = await fetch(`${options?.baseUrl || DEFAULT_BASE_URL}/execute`, {
+  const response = await fetch(`${options?.baseUrl || getApiBaseUrl()}/execute`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -127,4 +127,5 @@ if (import.meta.env.DEV) {
 // File use case:
 // This dev-only helper exposes browser console shortcuts for secure, token-based DB querying.
 // It is intended for local debugging and quick database inspection during development.
+// It also respects the API base URL configured by the user in Settings.
 export {};

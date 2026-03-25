@@ -1,3 +1,5 @@
+import { getAppSettings } from "@/lib/appSettings";
+
 export type ProgressMode = "learn" | "test";
 export type AttemptStatus = "success" | "failed";
 
@@ -242,6 +244,19 @@ function formatDateLabel(daysAgo: number): string {
   return date.toLocaleDateString("en-US", { weekday: "short" });
 }
 
+function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalDateKeyFromISO(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return getLocalDateKey(date);
+}
+
 function safeReadStoredAttempts(): ProgressAttempt[] {
   if (typeof window === "undefined") return [];
 
@@ -286,9 +301,9 @@ function buildDailyTrendFromAttempts(attempts: ProgressAttempt[]): DailyTrendPoi
     const date = new Date();
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() - daysAgo);
-    const dateKey = date.toISOString().slice(0, 10);
+    const dateKey = getLocalDateKey(date);
 
-    const dayAttempts = attempts.filter((entry) => entry.dateISO.slice(0, 10) === dateKey);
+    const dayAttempts = attempts.filter((entry) => getLocalDateKeyFromISO(entry.dateISO) === dateKey);
     const daySuccess = dayAttempts.filter((entry) => entry.status === "success").length;
     const accuracy = dayAttempts.length ? Math.round((daySuccess / dayAttempts.length) * 100) : 0;
 
@@ -303,8 +318,9 @@ function buildDailyTrendFromAttempts(attempts: ProgressAttempt[]): DailyTrendPoi
 }
 
 function buildGoalsFromAttempts(attempts: ProgressAttempt[]): ProgressGoals {
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const todayAttempts = attempts.filter((entry) => entry.dateISO.slice(0, 10) === todayKey).length;
+  const { weeklyGoalTarget } = getAppSettings();
+  const todayKey = getLocalDateKey(new Date());
+  const todayAttempts = attempts.filter((entry) => getLocalDateKeyFromISO(entry.dateISO) === todayKey).length;
 
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0);
@@ -315,7 +331,7 @@ function buildGoalsFromAttempts(attempts: ProgressAttempt[]): ProgressGoals {
   return {
     dailyAttemptTarget: 8,
     dailyAttemptsCompleted: todayAttempts,
-    weeklyAttemptTarget: 40,
+    weeklyAttemptTarget: weeklyGoalTarget,
     weeklyAttemptsCompleted: weekAttempts,
   };
 }

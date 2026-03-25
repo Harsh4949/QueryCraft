@@ -13,6 +13,7 @@ import {
 } from "@/components/icons";
 import { useState, useEffect } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
+import { getApiBaseUrl } from "@/lib/appSettings";
 
 const sidebarItems = [
   { icon: BookOpen, label: "Learn Mode", path: "/learn" },
@@ -38,7 +39,7 @@ const DashboardLayout = () => {
       return;
     }
     try {
-      const res = await fetch("https://sql-ai-backend-hosted.onrender.com/schema", {
+      const res = await fetch(`${getApiBaseUrl()}/schema`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -209,3 +210,8 @@ const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
+
+// File use case:
+// DashboardLayout provides the authenticated shell for all main pages.
+// It handles app navigation, user identity display, and database table sidebar loading.
+// API calls in this file respect the configurable backend base URL from Settings.

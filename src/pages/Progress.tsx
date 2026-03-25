@@ -207,7 +207,7 @@ const Progress = () => {
         <Card className="lg:col-span-2 border-border shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">7-Day Trend</CardTitle>
-            <CardDescription>Daily attempts and accuracy</CardDescription>
+            <CardDescription>Daily attempts and accuracy (%)</CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
             {progressData.dailyTrend.length ? (
