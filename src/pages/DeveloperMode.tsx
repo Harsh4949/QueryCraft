@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, CheckCircle2, Code2, Database, Lightbulb, Table2, Terminal } from "@/components/icons";
+import { useContext, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, Code2, Database, Lightbulb, Play, Table2, Terminal } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
+import { getApiBaseUrl, getAppSettings, saveAppSettings } from "@/lib/appSettings";
+import { DatabaseContext } from "@/context/DatabaseContext";
 
 type Blueprint = {
   id: string;
@@ -145,11 +147,19 @@ function safeWriteConnections(connections: ProjectConnection[]) {
 }
 
 const DeveloperMode = () => {
+  const navigate = useNavigate();
+  const { refreshTables } = useContext(DatabaseContext);
   const [activeBlueprintId, setActiveBlueprintId] = useState<string>(blueprints[0].id);
   const [projectName, setProjectName] = useState("");
   const [apiLink, setApiLink] = useState("");
   const [notes, setNotes] = useState("");
   const [connections, setConnections] = useState<ProjectConnection[]>(() => safeReadConnections());
+  const [isRunning, setIsRunning] = useState(false);
+  const [runMessage, setRunMessage] = useState("");
+  const [runError, setRunError] = useState(false);
+  const [runRows, setRunRows] = useState<any[]>([]);
+  const [executedSql, setExecutedSql] = useState("");
+  const [activeApiUrl, setActiveApiUrl] = useState<string>(() => getApiBaseUrl());
 
   const activeBlueprint = useMemo(
     () => blueprints.find((item) => item.id === activeBlueprintId) || blueprints[0],
@@ -202,6 +212,76 @@ const DeveloperMode = () => {
     setConnections(nextConnections);
     safeWriteConnections(nextConnections);
     toast({ title: "Removed", description: "Project link removed." });
+  };
+
+  const useConnectionAsActiveApi = (apiUrl: string) => {
+    const next = saveAppSettings({ apiBaseUrl: apiUrl });
+    setActiveApiUrl(next.apiBaseUrl);
+    toast({ title: "Active API updated", description: `Now using ${next.apiBaseUrl}` });
+  };
+
+  const isDangerousSql = (sql: string) => {
+    const normalized = sql.trim().toLowerCase();
+    return /\b(delete|drop|truncate|alter)\b/.test(normalized);
+  };
+
+  const runSql = async (sql: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({ title: "Login required", description: "Please login before running queries." });
+      navigate("/login");
+      return;
+    }
+
+    const settings = getAppSettings();
+    if (settings.confirmDangerousQueries && isDangerousSql(sql)) {
+      const approved = window.confirm("This query looks destructive. Do you want to continue?");
+      if (!approved) {
+        setRunError(true);
+        setRunMessage("Execution canceled by user.");
+        return;
+      }
+    }
+
+    try {
+      setIsRunning(true);
+      setRunError(false);
+      setRunMessage("");
+      setExecutedSql(sql);
+
+      const response = await fetch(`${getApiBaseUrl()}/execute`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ query: sql }),
+      });
+
+      if (response.status === 401) {
+        navigate("/login");
+        return;
+      }
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to execute SQL query");
+      }
+
+      const rows = (data.data || []).slice(0, settings.resultRowLimit);
+      setRunRows(rows);
+      setRunMessage(`Query executed successfully. ${rows.length} row(s) shown.`);
+
+      if (data.schemaChanged) {
+        refreshTables();
+      }
+    } catch (error) {
+      setRunError(true);
+      setRunRows([]);
+      setRunMessage(error instanceof Error ? error.message : "Execution failed.");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -289,13 +369,42 @@ const DeveloperMode = () => {
                   {activeBlueprint.schemaSql.map((sql, index) => (
                     <div key={`${activeBlueprint.id}-schema-${index}`} className="rounded-lg border border-border bg-background p-3">
                       <pre className="text-xs overflow-auto text-foreground font-mono whitespace-pre-wrap">{sql}</pre>
-                      <div className="flex justify-end mt-2">
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button variant="secondary" size="sm" onClick={() => runSql(sql)} disabled={isRunning}>
+                          <Play className="w-3.5 h-3.5" />
+                          Run
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => copyToClipboard(sql, "Schema SQL")}>
                           Copy
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/test" state={{ autoSQL: sql }}>
+                            Test Mode
+                          </Link>
                         </Button>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/20 p-3">
+                  <p className="text-xs font-semibold text-foreground mb-2">Suggested validation queries</p>
+                  <div className="space-y-2">
+                    {activeBlueprint.coreQueries.map((query, index) => (
+                      <div key={`${activeBlueprint.id}-core-${index}`} className="rounded-lg border border-border bg-background p-3">
+                        <pre className="text-xs overflow-auto text-foreground font-mono whitespace-pre-wrap">{query}</pre>
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button variant="secondary" size="sm" onClick={() => runSql(query)} disabled={isRunning}>
+                            <Play className="w-3.5 h-3.5" />
+                            Run
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => copyToClipboard(query, "Validation query")}>
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -360,10 +469,16 @@ const DeveloperMode = () => {
                           <p className="text-xs text-muted-foreground">{blueprintName}</p>
                         </div>
                         <div className="flex gap-2">
+                          <Button variant="secondary" size="sm" onClick={() => useConnectionAsActiveApi(item.apiLink)}>
+                            Use as Active API
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => copyToClipboard(item.apiLink, "API link")}>Copy Link</Button>
                           <Button variant="ghost" size="sm" onClick={() => removeConnection(item.id)}>Remove</Button>
                         </div>
                       </div>
+                      {item.apiLink === activeApiUrl ? (
+                        <Badge variant="secondary" className="mt-2">Active in Settings</Badge>
+                      ) : null}
                       <a href={item.apiLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline break-all mt-2 inline-block">
                         {item.apiLink}
                       </a>
@@ -392,7 +507,11 @@ const DeveloperMode = () => {
                     {pack.queries.map((query, index) => (
                       <div key={`${pack.category}-${index}`} className="rounded-lg border border-border bg-background p-3">
                         <pre className="text-xs overflow-auto text-foreground font-mono whitespace-pre-wrap">{query}</pre>
-                        <div className="flex justify-end mt-2">
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button variant="secondary" size="sm" onClick={() => runSql(query)} disabled={isRunning}>
+                            <Play className="w-3.5 h-3.5" />
+                            Run
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => copyToClipboard(query, "Query")}>Copy</Button>
                         </div>
                       </div>
@@ -423,6 +542,56 @@ const DeveloperMode = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Card className="border-border shadow-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-heading">Live Execution Result</CardTitle>
+          <CardDescription>Run any query from Developer Mode and view its output here.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {executedSql ? (
+            <pre className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono text-foreground whitespace-pre-wrap overflow-auto">
+              {executedSql}
+            </pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">No query executed yet. Use any Run button above.</p>
+          )}
+
+          {runMessage ? (
+            <div className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${runError ? "bg-yellow-500/10 text-yellow-600" : "bg-accent/10 text-accent"}`}>
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5" />
+              <span>{runMessage}</span>
+            </div>
+          ) : null}
+
+          {runRows.length > 0 && (
+            <div className="max-h-72 overflow-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    {Object.keys(runRows[0] || {}).map((key) => (
+                      <th key={key} className="px-4 py-2 text-left font-heading font-semibold text-foreground text-xs uppercase tracking-wider">
+                        {key}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {runRows.map((row, rowIndex) => (
+                    <tr key={rowIndex} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                      {Object.values(row).map((value, columnIndex) => (
+                        <td key={columnIndex} className="px-4 py-2.5 text-foreground text-xs">
+                          {value == null ? "-" : String(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-border shadow-card bg-muted/30">
         <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -460,4 +629,4 @@ export default DeveloperMode;
 // File use case:
 // DeveloperMode acts as a full student project SQL assistant.
 // It provides schema blueprints, project API link management, and essential query packs for development workflows.
-// It also bridges students to Learn/Test modes so they can execute and validate SQL during project building.
+// It also supports direct query execution and inline result viewing so students can validate SQL without leaving this page.
