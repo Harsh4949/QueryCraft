@@ -1,423 +1,359 @@
-import { BookOpen, ChevronRight, Clock, Tag } from "@/components/icons";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, BookOpen, CheckCircle2, Clock, Lightbulb, Tag } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  fetchTutorialLessons,
+  getTutorialCategories,
+  type TutorialDifficulty,
+  type TutorialLesson,
+} from "@/lib/tutorialsData";
 
-const tutorials = [
-  {
-    id: 1,
-    title: "Introduction to SQL",
-    category: "Basics",
-    readTime: "5 min",
-    content: `SQL (Structured Query Language) is the standard language for managing and manipulating relational databases. It allows you to create, read, update, and delete data stored in tables.
+const completedKey = "querycraft_tutorials_completed_v1";
+const bookmarksKey = "querycraft_tutorials_bookmarked_v1";
 
-**Why Learn SQL?**
-- SQL is used by nearly every company that stores data
-- It's the foundation for data analysis, backend development, and business intelligence
-- SQL skills are highly sought after in the job market
+const difficultyLevels: Array<"All" | TutorialDifficulty> = ["All", "Beginner", "Intermediate", "Advanced"];
 
-**Key Concepts:**
-- **Database**: A structured collection of data organized into tables
-- **Table**: A set of rows and columns, similar to a spreadsheet
-- **Row (Record)**: A single entry in a table
-- **Column (Field)**: A specific attribute of a record
-- **Primary Key**: A unique identifier for each row in a table
+function safeReadStringArray(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+  } catch {
+    return [];
+  }
+}
 
-SQL is declarative — you tell the database *what* you want, not *how* to get it.`,
-  },
-  {
-    id: 2,
-    title: "SELECT Statements",
-    category: "Queries",
-    readTime: "7 min",
-    content: `The SELECT statement is the most commonly used SQL command. It retrieves data from one or more tables.
-
-**Basic Syntax:**
-\`\`\`sql
-SELECT column1, column2
-FROM table_name;
-\`\`\`
-
-**Select All Columns:**
-\`\`\`sql
-SELECT * FROM employees;
-\`\`\`
-
-**Select Specific Columns:**
-\`\`\`sql
-SELECT first_name, last_name, email
-FROM employees;
-\`\`\`
-
-**Using Aliases:**
-\`\`\`sql
-SELECT first_name AS "First Name", last_name AS "Last Name"
-FROM employees;
-\`\`\`
-
-**DISTINCT — Remove Duplicates:**
-\`\`\`sql
-SELECT DISTINCT department
-FROM employees;
-\`\`\`
-
-**Tips:**
-- Always select only the columns you need for better performance
-- Use aliases to make output more readable
-- DISTINCT can be slow on large datasets — use it wisely`,
-  },
-  {
-    id: 3,
-    title: "Filtering with WHERE",
-    category: "Queries",
-    readTime: "8 min",
-    content: `The WHERE clause filters rows based on conditions, returning only the data you need.
-
-**Basic Syntax:**
-\`\`\`sql
-SELECT * FROM employees
-WHERE department = 'Engineering';
-\`\`\`
-
-**Comparison Operators:**
-- \`=\` Equal to
-- \`<>\` or \`!=\` Not equal to
-- \`>\` Greater than
-- \`<\` Less than
-- \`>=\` Greater than or equal
-- \`<=\` Less than or equal
-
-**Logical Operators:**
-\`\`\`sql
--- AND: Both conditions must be true
-SELECT * FROM employees
-WHERE department = 'Engineering' AND salary > 80000;
-
--- OR: At least one condition must be true
-SELECT * FROM employees
-WHERE department = 'Engineering' OR department = 'Design';
-
--- NOT: Negates a condition
-SELECT * FROM employees
-WHERE NOT department = 'HR';
-\`\`\`
-
-**Special Operators:**
-\`\`\`sql
--- BETWEEN: Range of values
-SELECT * FROM orders WHERE amount BETWEEN 100 AND 500;
-
--- IN: Match any value in a list
-SELECT * FROM employees WHERE department IN ('Engineering', 'Design');
-
--- LIKE: Pattern matching
-SELECT * FROM employees WHERE name LIKE 'J%';  -- starts with J
-SELECT * FROM employees WHERE email LIKE '%@gmail.com';  -- ends with @gmail.com
-
--- IS NULL: Check for null values
-SELECT * FROM employees WHERE manager_id IS NULL;
-\`\`\``,
-  },
-  {
-    id: 4,
-    title: "Sorting & Limiting Results",
-    category: "Queries",
-    readTime: "5 min",
-    content: `Control the order and number of results returned by your queries.
-
-**ORDER BY — Sorting Results:**
-\`\`\`sql
--- Ascending (default)
-SELECT * FROM employees ORDER BY last_name ASC;
-
--- Descending
-SELECT * FROM employees ORDER BY salary DESC;
-
--- Multiple columns
-SELECT * FROM employees ORDER BY department, last_name;
-\`\`\`
-
-**LIMIT — Restrict Number of Rows:**
-\`\`\`sql
--- Get the top 10 highest-paid employees
-SELECT * FROM employees
-ORDER BY salary DESC
-LIMIT 10;
-\`\`\`
-
-**OFFSET — Skip Rows (Pagination):**
-\`\`\`sql
--- Get rows 11-20
-SELECT * FROM employees
-ORDER BY id
-LIMIT 10 OFFSET 10;
-\`\`\`
-
-**Combining Everything:**
-\`\`\`sql
-SELECT first_name, last_name, salary
-FROM employees
-WHERE department = 'Engineering'
-ORDER BY salary DESC
-LIMIT 5;
-\`\`\`
-
-This query finds the top 5 highest-paid engineers.`,
-  },
-  {
-    id: 5,
-    title: "JOINs — Combining Tables",
-    category: "Advanced",
-    readTime: "10 min",
-    content: `JOINs let you combine data from two or more tables based on related columns.
-
-**INNER JOIN — Only Matching Rows:**
-\`\`\`sql
-SELECT employees.name, departments.name AS department
-FROM employees
-INNER JOIN departments ON employees.dept_id = departments.id;
-\`\`\`
-
-**LEFT JOIN — All Left + Matching Right:**
-\`\`\`sql
-SELECT employees.name, departments.name
-FROM employees
-LEFT JOIN departments ON employees.dept_id = departments.id;
-\`\`\`
-Returns all employees, even those without a department.
-
-**RIGHT JOIN — All Right + Matching Left:**
-\`\`\`sql
-SELECT employees.name, departments.name
-FROM employees
-RIGHT JOIN departments ON employees.dept_id = departments.id;
-\`\`\`
-Returns all departments, even those without employees.
-
-**FULL OUTER JOIN — All Rows From Both:**
-\`\`\`sql
-SELECT employees.name, departments.name
-FROM employees
-FULL OUTER JOIN departments ON employees.dept_id = departments.id;
-\`\`\`
-
-**When to Use Which JOIN:**
-| JOIN Type | Use Case |
-|-----------|----------|
-| INNER | Only want matching data from both tables |
-| LEFT | Want all records from the primary table |
-| RIGHT | Want all records from the secondary table |
-| FULL OUTER | Want everything from both tables |`,
-  },
-  {
-    id: 6,
-    title: "INSERT, UPDATE & DELETE",
-    category: "Data Manipulation",
-    readTime: "8 min",
-    content: `Beyond reading data, SQL lets you add, modify, and remove records.
-
-**INSERT — Adding New Rows:**
-\`\`\`sql
-INSERT INTO employees (first_name, last_name, email, department)
-VALUES ('Jane', 'Doe', 'jane@company.com', 'Engineering');
-
--- Insert multiple rows
-INSERT INTO employees (first_name, last_name, department)
-VALUES
-  ('Alice', 'Smith', 'Design'),
-  ('Bob', 'Jones', 'Marketing');
-\`\`\`
-
-**UPDATE — Modifying Existing Rows:**
-\`\`\`sql
-UPDATE employees
-SET salary = 95000, department = 'Engineering'
-WHERE id = 42;
-\`\`\`
-
-⚠️ **Always use a WHERE clause with UPDATE!** Without it, every row gets updated.
-
-**DELETE — Removing Rows:**
-\`\`\`sql
-DELETE FROM employees
-WHERE id = 42;
-\`\`\`
-
-⚠️ **Always use a WHERE clause with DELETE!** Without it, all rows are deleted.
-
-**Safe Practice:**
-Before running UPDATE or DELETE, first run a SELECT with the same WHERE clause to verify which rows will be affected:
-\`\`\`sql
--- Check first
-SELECT * FROM employees WHERE department = 'Temp';
--- Then delete
-DELETE FROM employees WHERE department = 'Temp';
-\`\`\``,
-  },
-  {
-    id: 7,
-    title: "Aggregate Functions & GROUP BY",
-    category: "Advanced",
-    readTime: "9 min",
-    content: `Aggregate functions perform calculations across rows and return a single result.
-
-**Common Aggregate Functions:**
-\`\`\`sql
-SELECT COUNT(*) FROM employees;          -- Number of rows
-SELECT SUM(salary) FROM employees;       -- Total salary
-SELECT AVG(salary) FROM employees;       -- Average salary
-SELECT MIN(salary) FROM employees;       -- Lowest salary
-SELECT MAX(salary) FROM employees;       -- Highest salary
-\`\`\`
-
-**GROUP BY — Aggregate Per Group:**
-\`\`\`sql
-SELECT department, COUNT(*) AS employee_count, AVG(salary) AS avg_salary
-FROM employees
-GROUP BY department;
-\`\`\`
-
-**HAVING — Filter Groups:**
-\`\`\`sql
-SELECT department, AVG(salary) AS avg_salary
-FROM employees
-GROUP BY department
-HAVING AVG(salary) > 80000;
-\`\`\`
-
-**Important:** WHERE filters rows *before* grouping, HAVING filters groups *after* aggregation.
-
-**Full Example:**
-\`\`\`sql
-SELECT department, COUNT(*) AS total, ROUND(AVG(salary), 2) AS avg_sal
-FROM employees
-WHERE hire_date > '2020-01-01'
-GROUP BY department
-HAVING COUNT(*) >= 5
-ORDER BY avg_sal DESC;
-\`\`\`
-
-This finds departments with 5+ employees hired after 2020, sorted by average salary.`,
-  },
-];
-
-const categories = ["All", ...Array.from(new Set(tutorials.map((t) => t.category)))];
+function safeWriteStringArray(key: string, value: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore write failures (private mode / quota)
+  }
+}
 
 const Tutorials = () => {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [lessons, setLessons] = useState<TutorialLesson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = activeCategory === "All" ? tutorials : tutorials.filter((t) => t.category === activeCategory);
-  const selected = tutorials.find((t) => t.id === selectedId);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeDifficulty, setActiveDifficulty] = useState<"All" | TutorialDifficulty>("All");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [completedIds, setCompletedIds] = useState<string[]>(() => safeReadStringArray(completedKey));
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => safeReadStringArray(bookmarksKey));
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLessons = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await fetchTutorialLessons();
+        if (!active) return;
+        setLessons(data);
+        setSelectedId(data[0]?.id || null);
+      } catch (e) {
+        if (!active) return;
+        console.error("Failed to load tutorials", e);
+        setError("Unable to load tutorials right now.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadLessons();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categories = useMemo(() => getTutorialCategories(lessons), [lessons]);
+
+  const filteredLessons = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    return lessons.filter((lesson) => {
+      const categoryMatch = activeCategory === "All" || lesson.category === activeCategory;
+      const difficultyMatch = activeDifficulty === "All" || lesson.difficulty === activeDifficulty;
+      const searchMatch =
+        !term ||
+        lesson.title.toLowerCase().includes(term) ||
+        lesson.summary.toLowerCase().includes(term) ||
+        lesson.category.toLowerCase().includes(term);
+
+      return categoryMatch && difficultyMatch && searchMatch;
+    });
+  }, [lessons, activeCategory, activeDifficulty, searchTerm]);
+
+  const selectedLesson = useMemo(
+    () => filteredLessons.find((item) => item.id === selectedId) || filteredLessons[0] || null,
+    [filteredLessons, selectedId],
+  );
+
+  const completionPercent = useMemo(() => {
+    if (!lessons.length) return 0;
+    return Math.round((completedIds.length / lessons.length) * 100);
+  }, [completedIds, lessons]);
+
+  useEffect(() => {
+    if (!selectedLesson && filteredLessons.length) {
+      setSelectedId(filteredLessons[0].id);
+    }
+  }, [filteredLessons, selectedLesson]);
+
+  const toggleCompleted = (id: string) => {
+    const next = completedIds.includes(id) ? completedIds.filter((x) => x !== id) : [...completedIds, id];
+    setCompletedIds(next);
+    safeWriteStringArray(completedKey, next);
+  };
+
+  const toggleBookmark = (id: string) => {
+    const next = bookmarkedIds.includes(id) ? bookmarkedIds.filter((x) => x !== id) : [...bookmarkedIds, id];
+    setBookmarkedIds(next);
+    safeWriteStringArray(bookmarksKey, next);
+  };
+
+  const nextLesson = useMemo(() => {
+    if (!selectedLesson) return null;
+    const index = filteredLessons.findIndex((item) => item.id === selectedLesson.id);
+    if (index < 0 || index >= filteredLessons.length - 1) return null;
+    return filteredLessons[index + 1];
+  }, [selectedLesson, filteredLessons]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in max-w-6xl">
       <div>
         <h1 className="text-2xl font-heading font-bold text-foreground">SQL Tutorials</h1>
-        <p className="text-muted-foreground mt-1">Step-by-step text guides to master SQL from the ground up.</p>
+        <p className="text-muted-foreground mt-1">Interactive, structured lessons to help students learn SQL smoothly.</p>
       </div>
 
-      {/* Category filters */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => { setActiveCategory(cat); setSelectedId(null); }}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-              activeCategory === cat
-                ? "bg-primary text-primary-foreground shadow-soft"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card className="border-border shadow-card">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Total Lessons</p>
+            <p className="text-2xl font-heading font-bold text-foreground">{lessons.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-card">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Completed</p>
+            <p className="text-2xl font-heading font-bold text-secondary">{completedIds.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-card">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Progress</p>
+            <p className="text-2xl font-heading font-bold text-primary">{completionPercent}%</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid lg:grid-cols-[340px_1fr] gap-6">
-        {/* Tutorial list */}
-        <div className="space-y-2 max-h-[calc(100vh-240px)] overflow-auto pr-1">
-          {filtered.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSelectedId(t.id)}
-              className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
-                selectedId === t.id
-                  ? "border-primary bg-primary/5 shadow-soft"
-                  : "border-border bg-card hover:shadow-card hover:-translate-y-0.5"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-heading font-semibold text-foreground text-sm truncate">{t.title}</h3>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><Tag className="w-3 h-3" />{t.category}</span>
-                    <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{t.readTime}</span>
+      <Card className="border-border shadow-card">
+        <CardContent className="p-4 space-y-3">
+          <Input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by title, topic, or category..."
+          />
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => {
+                  setActiveCategory(category);
+                  setSelectedId(null);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  activeCategory === category
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {difficultyLevels.map((difficulty) => (
+              <button
+                key={difficulty}
+                onClick={() => {
+                  setActiveDifficulty(difficulty);
+                  setSelectedId(null);
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                  activeDifficulty === difficulty
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70"
+                }`}
+              >
+                {difficulty}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {error && (
+        <Card className="border-destructive/30 bg-destructive/10">
+          <CardContent className="p-4 text-sm text-destructive">{error}</CardContent>
+        </Card>
+      )}
+
+      <div className="grid lg:grid-cols-[330px_1fr] gap-6">
+        <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-auto pr-1">
+          {loading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-20 rounded-xl border border-border bg-card animate-pulse" />
+            ))
+          ) : filteredLessons.length ? (
+            filteredLessons.map((lesson) => {
+              const isSelected = selectedLesson?.id === lesson.id;
+              const isCompleted = completedIds.includes(lesson.id);
+              const isBookmarked = bookmarkedIds.includes(lesson.id);
+
+              return (
+                <button
+                  key={lesson.id}
+                  onClick={() => setSelectedId(lesson.id)}
+                  className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
+                    isSelected ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:shadow-card"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-heading font-semibold text-sm text-foreground truncate">{lesson.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{lesson.summary}</p>
+                      <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1"><Tag className="w-3 h-3" />{lesson.category}</span>
+                        <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{lesson.readTimeMin} min</span>
+                        <Badge variant="outline" className="text-[10px]">{lesson.difficulty}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {isCompleted && <CheckCircle2 className="w-4 h-4 text-secondary" />}
+                      {isBookmarked && <BookOpen className="w-4 h-4 text-primary" />}
+                    </div>
                   </div>
-                </div>
-                <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 mt-0.5 transition-transform ${selectedId === t.id ? "text-primary rotate-90" : ""}`} />
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Content area */}
-        <div className="rounded-2xl border border-border bg-card p-6 md:p-8 shadow-card min-h-[400px]">
-          {selected ? (
-            <div className="animate-fade-in">
-              <div className="flex items-center gap-3 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{selected.category}</span>
-                <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><Clock className="w-3 h-3" />{selected.readTime}</span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-heading font-bold text-foreground mt-2 mb-5">{selected.title}</h2>
-              <div className="prose prose-sm max-w-none text-foreground/90 leading-relaxed">
-                {selected.content.split("\n").map((line, i) => {
-                  if (line.startsWith("```sql")) return <div key={i} className="mt-3" />;
-                  if (line.startsWith("```")) return <div key={i} className="mb-3" />;
-                  if (line.startsWith("**") && line.endsWith("**")) {
-                    return <h3 key={i} className="font-heading font-bold text-foreground mt-5 mb-2 text-base">{line.replace(/\*\*/g, "")}</h3>;
-                  }
-                  if (line.startsWith("- ")) {
-                    return <li key={i} className="ml-4 text-sm text-muted-foreground list-disc">{renderInline(line.slice(2))}</li>;
-                  }
-                  if (line.startsWith("| ")) {
-                    return <p key={i} className="text-sm font-mono text-muted-foreground">{line}</p>;
-                  }
-                  if (line.startsWith("⚠️")) {
-                    return <p key={i} className="text-sm text-accent font-medium bg-accent/10 px-3 py-2 rounded-lg mt-2">{line}</p>;
-                  }
-                  if (line.trim().startsWith("SELECT") || line.trim().startsWith("INSERT") || line.trim().startsWith("UPDATE") || line.trim().startsWith("DELETE") || line.trim().startsWith("FROM") || line.trim().startsWith("WHERE") || line.trim().startsWith("ORDER") || line.trim().startsWith("LIMIT") || line.trim().startsWith("GROUP") || line.trim().startsWith("HAVING") || line.trim().startsWith("INNER") || line.trim().startsWith("LEFT") || line.trim().startsWith("RIGHT") || line.trim().startsWith("FULL") || line.trim().startsWith("JOIN") || line.trim().startsWith("SET") || line.trim().startsWith("VALUES") || line.trim().startsWith("--") || line.trim().startsWith("ON ")) {
-                    return <p key={i} className="font-mono text-xs bg-muted/80 px-3 py-0.5 text-foreground/80">{line}</p>;
-                  }
-                  if (line.trim() === "") return <div key={i} className="h-2" />;
-                  return <p key={i} className="text-sm text-muted-foreground leading-relaxed">{renderInline(line)}</p>;
-                })}
-              </div>
-            </div>
+                </button>
+              );
+            })
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center py-16">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <BookOpen className="w-7 h-7 text-primary" />
-              </div>
-              <h3 className="font-heading font-bold text-foreground mb-1">Select a tutorial</h3>
-              <p className="text-sm text-muted-foreground max-w-xs">Choose a tutorial from the list to start reading and learning SQL concepts.</p>
-            </div>
+            <Card className="border-border shadow-card">
+              <CardContent className="p-4 text-sm text-muted-foreground">No tutorials found for this filter.</CardContent>
+            </Card>
           )}
         </div>
+
+        <Card className="border-border shadow-card min-h-[460px]">
+          {selectedLesson ? (
+            <>
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Badge variant="secondary">{selectedLesson.category}</Badge>
+                  <Badge variant="outline">{selectedLesson.difficulty}</Badge>
+                  <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {selectedLesson.readTimeMin} min
+                  </span>
+                </div>
+                <CardTitle className="text-xl font-heading">{selectedLesson.title}</CardTitle>
+                <CardDescription>{selectedLesson.summary}</CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant={completedIds.includes(selectedLesson.id) ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => toggleCompleted(selectedLesson.id)}
+                  >
+                    {completedIds.includes(selectedLesson.id) ? "Completed" : "Mark as Complete"}
+                  </Button>
+                  <Button
+                    variant={bookmarkedIds.includes(selectedLesson.id) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleBookmark(selectedLesson.id)}
+                  >
+                    {bookmarkedIds.includes(selectedLesson.id) ? "Bookmarked" : "Bookmark"}
+                  </Button>
+                </div>
+
+                <Tabs defaultValue="lesson" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="lesson">Lesson</TabsTrigger>
+                    <TabsTrigger value="examples">SQL Examples</TabsTrigger>
+                    <TabsTrigger value="checklist">Checklist</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="lesson" className="space-y-2">
+                    {selectedLesson.content.map((line, index) => (
+                      <p key={`${selectedLesson.id}-line-${index}`} className="text-sm text-muted-foreground leading-relaxed">
+                        {line}
+                      </p>
+                    ))}
+                  </TabsContent>
+
+                  <TabsContent value="examples" className="space-y-2">
+                    {selectedLesson.sqlExamples.map((sql, index) => (
+                      <pre
+                        key={`${selectedLesson.id}-sql-${index}`}
+                        className="text-xs font-mono bg-muted/60 rounded-lg border border-border p-3 overflow-auto text-foreground"
+                      >
+                        {sql}
+                      </pre>
+                    ))}
+                  </TabsContent>
+
+                  <TabsContent value="checklist" className="space-y-2">
+                    {selectedLesson.checklist.map((item, index) => (
+                      <div key={`${selectedLesson.id}-todo-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Lightbulb className="w-4 h-4 text-primary mt-0.5" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex flex-wrap items-center justify-between pt-2 border-t border-border">
+                  <Link to="/learn" className="text-sm text-primary hover:underline">Try in Learn Mode</Link>
+                  {nextLesson && (
+                    <Button variant="accent" size="sm" onClick={() => setSelectedId(nextLesson.id)}>
+                      Next Lesson <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="p-8 h-full flex items-center justify-center text-center">
+              <div>
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-7 h-7 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">Select a tutorial to start learning.</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
     </div>
   );
 };
 
-function renderInline(text: string) {
-  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={i} className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono text-primary">{part.slice(1, -1)}</code>;
-    }
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-    }
-    return <span key={i}>{part}</span>;
-  });
-}
-
 export default Tutorials;
+
+// File use case:
+// This page provides a dynamic SQL learning experience with search, filter, progress, bookmarks, and lesson details.
+// It consumes tutorial data via a backend-ready loader (with local fallback) so students can learn smoothly even offline.
+// It is designed for gradual API integration while keeping rich UI and functional learning flow in production today.

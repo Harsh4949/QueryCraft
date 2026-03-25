@@ -12,7 +12,7 @@ import {
   Menu,
   GraduationCap
 } from "@/components/icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { getApiBaseUrl } from "@/lib/appSettings";
 
@@ -29,6 +29,7 @@ const sidebarItems = [
 const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const contentRef = useRef<HTMLElement | null>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const[userName, setUserName] = useState<string | null>(null);
@@ -77,6 +78,23 @@ const DashboardLayout = () => {
       console.error("Failed to parse token", err);
     }
   }, []);
+
+  // Ensure route navigation always starts at the top of dashboard content.
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    if (location.hash) {
+      const id = location.hash.replace("#", "");
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+    }
+
+    container.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search, location.hash]);
 
   // ✅ Handle table click
   const handleTableClick = (tableName: string) => {
@@ -203,7 +221,7 @@ const DashboardLayout = () => {
           )}
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main ref={contentRef} className="flex-1 overflow-auto p-4 md:p-6">
             <Outlet />
           </main>
         </div>
