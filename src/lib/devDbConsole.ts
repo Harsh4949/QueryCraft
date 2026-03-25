@@ -10,6 +10,13 @@ type QueryOptions = {
   baseUrl?: string;
 };
 
+type SchemaInfo = {
+  databaseName: string;
+  schemaName: string;
+  totalTables: number;
+  tableNames: string[];
+};
+
 const DEFAULT_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || "https://sql-ai-backend-hosted.onrender.com";
 
 async function executeSql(query: string, options?: QueryOptions): Promise<QueryResponse> {
@@ -44,6 +51,7 @@ declare global {
   interface Window {
     qcQuery: (sql: string, options?: QueryOptions) => Promise<QueryResponse>;
     qcSelectAll: (tableName: string, options?: QueryOptions) => Promise<QueryResponse>;
+    qcSchemaInfo: (options?: QueryOptions) => Promise<SchemaInfo>;
   }
 }
 
@@ -71,9 +79,52 @@ if (import.meta.env.DEV) {
     return window.qcQuery(`SELECT * FROM ${tableName.trim()};`, options);
   };
 
+  window.qcSchemaInfo = async (options?: QueryOptions) => {
+    try {
+      const [dbResult, schemaResult, countResult, tablesResult] = await Promise.all([
+        executeSql("SELECT current_database() AS database_name;", options),
+        executeSql("SELECT current_schema() AS schema_name;", options),
+        executeSql(
+          "SELECT COUNT(*)::int AS total_tables FROM information_schema.tables WHERE table_schema = current_schema();",
+          options,
+        ),
+        executeSql(
+          "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() ORDER BY table_name;",
+          options,
+        ),
+      ]);
+
+      const databaseName = String((dbResult.data?.[0] as { database_name?: string } | undefined)?.database_name || "unknown");
+      const schemaName = String((schemaResult.data?.[0] as { schema_name?: string } | undefined)?.schema_name || "unknown");
+      const totalTables = Number((countResult.data?.[0] as { total_tables?: number } | undefined)?.total_tables || 0);
+      const tableNames = (tablesResult.data || []).map((row) => String((row as { table_name?: string }).table_name || "")).filter(Boolean);
+
+      const summary: SchemaInfo = {
+        databaseName,
+        schemaName,
+        totalTables,
+        tableNames,
+      };
+
+      console.log("[qcSchemaInfo] Database:", summary.databaseName);
+      console.log("[qcSchemaInfo] Schema:", summary.schemaName);
+      console.log("[qcSchemaInfo] Total Tables:", summary.totalTables);
+      console.log("[qcSchemaInfo] Tables:", summary.tableNames);
+
+      return summary;
+    } catch (error) {
+      console.error("[qcSchemaInfo] Error:", error);
+      throw error;
+    }
+  };
+
   console.log("[QueryCraft Dev] Console DB helpers ready:");
   console.log("- qcQuery(\"SELECT * FROM your_table;\")");
   console.log("- qcSelectAll(\"your_table\")");
+  console.log("- qcSchemaInfo() // database + schema + table count + table names");
 }
 
+// File use case:
+// This dev-only helper exposes browser console shortcuts for secure, token-based DB querying.
+// It is intended for local debugging and quick database inspection during development.
 export {};
