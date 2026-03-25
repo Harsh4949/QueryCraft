@@ -5,6 +5,7 @@ import { useLocation, useNavigate} from "react-router-dom";
 import { useEffect } from "react";
 import { useContext } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
+import { recordProgressAttempt } from "@/lib/progress";
 
 
 
@@ -26,6 +27,8 @@ const TestMode = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [runMessage, setRunMessage] = useState("");
+  const [runError, setRunError] = useState(false);
   
   const { refreshTables } = useContext(DatabaseContext);
  const location = useLocation();
@@ -36,9 +39,12 @@ const TestMode = () => {
     const autoSQL = location.state.autoSQL;
 
     const runAutoQuery = async () => {
+      const startedAt = Date.now();
       try {
         setSqlInput(autoSQL);
         setIsRunning(true);
+        setRunMessage("");
+        setRunError(false);
 
         const token = localStorage.getItem("token");
         if (!token) {
@@ -57,10 +63,34 @@ const TestMode = () => {
         return;
       }
         const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to execute SQL query");
+        }
         setResults(data.data || []);
         setHasRun(true);
+        setRunMessage("Attempt tracked in Progress dashboard.");
+
+        recordProgressAttempt({
+          mode: "test",
+          status: "success",
+          durationSec: Math.round((Date.now() - startedAt) / 1000),
+          rowsReturned: (data.data || []).length,
+          sourceText: autoSQL,
+        });
       } catch (error) {
         console.error(error);
+        setHasRun(true);
+        setResults([]);
+        setRunError(true);
+        setRunMessage("Execution failed. Please check SQL syntax and try again.");
+
+        recordProgressAttempt({
+          mode: "test",
+          status: "failed",
+          durationSec: Math.round((Date.now() - startedAt) / 1000),
+          rowsReturned: 0,
+          sourceText: autoSQL,
+        });
       } finally {
         setIsRunning(false);
       }
@@ -83,6 +113,7 @@ const TestMode = () => {
   // };
   const handleRun = async () => {
   if (!sqlInput.trim()) return;
+  const startedAt = Date.now();
   const token = localStorage.getItem("token");
   if (!token) {
     alert("You must be logged in to run this query.");
@@ -90,6 +121,8 @@ const TestMode = () => {
   }
   try {
     setIsRunning(true);
+    setRunMessage("");
+    setRunError(false);
 
     const response = await fetch("https://sql-ai-backend-hosted.onrender.com/execute", {
       method: "POST",
@@ -102,17 +135,41 @@ const TestMode = () => {
     }
 
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to execute SQL query");
+    }
 
     setResults(data.data || []);
     setHasRun(true);
+    setRunMessage("Attempt tracked in Progress dashboard.");
     console.log("Query results:", data);
     // 🔥 Refresh sidebar if schema changed
     if (data.schemaChanged) {
       refreshTables();
     }
 
+    recordProgressAttempt({
+      mode: "test",
+      status: "success",
+      durationSec: Math.round((Date.now() - startedAt) / 1000),
+      rowsReturned: (data.data || []).length,
+      sourceText: sqlInput,
+    });
+
   } catch (error) {
     console.error(error);
+    setHasRun(true);
+    setResults([]);
+    setRunError(true);
+    setRunMessage("Execution failed. Please check SQL syntax and try again.");
+
+    recordProgressAttempt({
+      mode: "test",
+      status: "failed",
+      durationSec: Math.round((Date.now() - startedAt) / 1000),
+      rowsReturned: 0,
+      sourceText: sqlInput,
+    });
   } finally {
     setIsRunning(false);
   }
@@ -201,7 +258,9 @@ const TestMode = () => {
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-accent text-xs">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {/* Query executed in 0.12s — 3 rows returned */}
-                Query executed— {results.length} rows returned
+                {runError
+                  ? runMessage || "Query failed."
+                  : `${runMessage || "Query executed."} ${results.length} row(s) returned`}
               </div>
             </div>
           ) : (
@@ -216,3 +275,7 @@ const TestMode = () => {
 };
 
 export default TestMode;
+
+// File use case:
+// TestMode runs raw SQL queries and displays result sets for practice.
+// It now logs each attempt to progress tracking for analytics and streak insights.

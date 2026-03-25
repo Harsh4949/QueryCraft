@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, BarChart3, CheckCircle2, Clock, Code2, Tag, Zap } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -73,30 +74,22 @@ const Progress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const loadProgress = async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+      const data = await getProgressData();
+      setProgressData(data);
+    } catch (error) {
+      console.error("Failed to load progress", error);
+      setErrorMessage("Unable to load progress right now. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let active = true;
-
-    const loadProgress = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage("");
-        const data = await getProgressData();
-        if (!active) return;
-        setProgressData(data);
-      } catch (error) {
-        if (!active) return;
-        console.error("Failed to load progress", error);
-        setErrorMessage("Unable to load progress right now. Please try again.");
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-
     loadProgress();
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   const stats = useMemo(() => {
@@ -160,7 +153,12 @@ const Progress = () => {
         <p className="text-sm text-muted-foreground">
           Track your SQL learning journey and identify where to improve next.
         </p>
-        <p className="text-xs text-muted-foreground mt-1">Last updated: {formatDate(progressData.lastUpdatedISO)}</p>
+        <div className="mt-2 flex items-center gap-3">
+          <p className="text-xs text-muted-foreground">Last updated: {formatDate(progressData.lastUpdatedISO)}</p>
+          <Button variant="outline" size="sm" onClick={loadProgress} className="h-7 text-xs">
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -400,3 +398,7 @@ const Progress = () => {
 };
 
 export default Progress;
+
+// File use case:
+// Progress page visualizes learning metrics from tracked SQL attempts.
+// It provides stats, trends, mastery, and actionable weak-area insights.

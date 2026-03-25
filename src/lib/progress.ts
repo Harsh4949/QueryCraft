@@ -47,6 +47,17 @@ export interface ProgressStats {
   bestStreak: number;
 }
 
+export interface RecordProgressAttemptInput {
+  mode: ProgressMode;
+  status: AttemptStatus;
+  durationSec: number;
+  rowsReturned: number;
+  topicHint?: string;
+  sourceText?: string;
+}
+
+const PROGRESS_STORAGE_KEY = "querycraft_progress_attempts_v1";
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -231,6 +242,140 @@ function formatDateLabel(daysAgo: number): string {
   return date.toLocaleDateString("en-US", { weekday: "short" });
 }
 
+function safeReadStoredAttempts(): ProgressAttempt[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item, index) => {
+        const row = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+        return {
+          id: String(row.id ?? `stored-${index + 1}`),
+          dateISO: String(row.dateISO ?? new Date().toISOString()),
+          mode: parseMode(row.mode),
+          topic: String(row.topic ?? "General SQL"),
+          status: parseStatus(row.status),
+          durationSec: clamp(safeNumber(row.durationSec, 0), 0, 86_400),
+          rowsReturned: clamp(safeNumber(row.rowsReturned, 0), 0, 10_000),
+        } as ProgressAttempt;
+      })
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+  } catch {
+    return [];
+  }
+}
+
+function safeWriteStoredAttempts(attempts: ProgressAttempt[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(attempts.slice(0, 300)));
+  } catch {
+    // ignore storage write failure in private mode/quota limits
+  }
+}
+
+function buildDailyTrendFromAttempts(attempts: ProgressAttempt[]): DailyTrendPoint[] {
+  const points: DailyTrendPoint[] = [];
+
+  for (let daysAgo = 6; daysAgo >= 0; daysAgo -= 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - daysAgo);
+    const dateKey = date.toISOString().slice(0, 10);
+
+    const dayAttempts = attempts.filter((entry) => entry.dateISO.slice(0, 10) === dateKey);
+    const daySuccess = dayAttempts.filter((entry) => entry.status === "success").length;
+    const accuracy = dayAttempts.length ? Math.round((daySuccess / dayAttempts.length) * 100) : 0;
+
+    points.push({
+      dateLabel: formatDateLabel(daysAgo),
+      attempts: dayAttempts.length,
+      accuracy,
+    });
+  }
+
+  return points;
+}
+
+function buildGoalsFromAttempts(attempts: ProgressAttempt[]): ProgressGoals {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayAttempts = attempts.filter((entry) => entry.dateISO.slice(0, 10) === todayKey).length;
+
+  const weekStart = new Date();
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - 6);
+
+  const weekAttempts = attempts.filter((entry) => new Date(entry.dateISO) >= weekStart).length;
+
+  return {
+    dailyAttemptTarget: 8,
+    dailyAttemptsCompleted: todayAttempts,
+    weeklyAttemptTarget: 40,
+    weeklyAttemptsCompleted: weekAttempts,
+  };
+}
+
+function buildAchievements(attempts: ProgressAttempt[]): ProgressAchievement[] {
+  const totalAttempts = attempts.length;
+  const { bestStreak } = calculateStreaks(attempts);
+  const accuracy = calculateSuccessRate(attempts);
+  const joinAttempts = attempts.filter((entry) => entry.topic.toUpperCase().includes("JOIN")).length;
+
+  return [
+    { id: "a1", title: "First Query Run", unlocked: totalAttempts >= 1 },
+    { id: "a2", title: "3-Day Streak", unlocked: bestStreak >= 3 },
+    { id: "a3", title: "JOIN Explorer", unlocked: joinAttempts >= 5 },
+    { id: "a4", title: "Accuracy 80%+", unlocked: accuracy >= 80 && totalAttempts >= 10 },
+  ];
+}
+
+function detectTopicFromText(sourceText?: string): string {
+  const text = (sourceText || "").toLowerCase();
+  if (!text.trim()) return "General SQL";
+  if (text.includes("join")) return "JOIN";
+  if (text.includes("group by")) return "GROUP BY";
+  if (text.includes("where")) return "WHERE";
+  if (text.includes("subquery") || text.includes("nested")) return "SUBQUERY";
+  if (text.includes("insert")) return "INSERT";
+  if (text.includes("update")) return "UPDATE";
+  if (text.includes("delete")) return "DELETE";
+  if (text.includes("select")) return "SELECT";
+  return "General SQL";
+}
+
+export function inferTopic(sourceText?: string, topicHint?: string): string {
+  const topic = (topicHint || "").trim();
+  if (topic) return topic.toUpperCase();
+  return detectTopicFromText(sourceText);
+}
+
+export function recordProgressAttempt(input: RecordProgressAttemptInput): ProgressAttempt {
+  const attempts = safeReadStoredAttempts();
+
+  const attempt: ProgressAttempt = {
+    id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    dateISO: new Date().toISOString(),
+    mode: input.mode,
+    topic: inferTopic(input.sourceText, input.topicHint),
+    status: input.status,
+    durationSec: clamp(Math.round(input.durationSec || 0), 0, 86_400),
+    rowsReturned: clamp(Math.round(input.rowsReturned || 0), 0, 10_000),
+  };
+
+  safeWriteStoredAttempts([attempt, ...attempts]);
+  return attempt;
+}
+
+export function clearTrackedProgress(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PROGRESS_STORAGE_KEY);
+}
+
 export function getDemoProgressData(): ProgressData {
   const now = new Date();
 
@@ -277,7 +422,29 @@ export function getDemoProgressData(): ProgressData {
 }
 
 export async function getProgressData(): Promise<ProgressData> {
+  const trackedAttempts = safeReadStoredAttempts();
+
+  if (!trackedAttempts.length) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(getDemoProgressData()), 250);
+    });
+  }
+
   return new Promise((resolve) => {
-    setTimeout(() => resolve(getDemoProgressData()), 300);
+    setTimeout(
+      () =>
+        resolve({
+          attempts: trackedAttempts,
+          dailyTrend: buildDailyTrendFromAttempts(trackedAttempts),
+          goals: buildGoalsFromAttempts(trackedAttempts),
+          achievements: buildAchievements(trackedAttempts),
+          lastUpdatedISO: new Date().toISOString(),
+        }),
+      200,
+    );
   });
 }
+
+// File use case:
+// This module powers Progress analytics and persistence for QueryCraft.
+// It stores user attempts safely in localStorage and computes dashboard insights.

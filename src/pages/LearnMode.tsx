@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, ArrowRight, AlertCircle, Table2 } from "@/components/icons";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { useNavigate } from "react-router";
+import { recordProgressAttempt } from "@/lib/progress";
 
 // const sampleResults = [
 //   { id: 1, name: "Alice", email: "alice@example.com", age: 28 },
@@ -19,6 +20,7 @@ const LearnMode = () => {
   const [results, setResults] = useState<any[]>([]);
   const [aiMessage, setAiMessage] = useState("");
   const [isRunnable, setIsRunnable] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("");
   const navigate = useNavigate();
 
   const { refreshTables } = useContext(DatabaseContext);
@@ -66,6 +68,7 @@ const LearnMode = () => {
 
 const handleConvert = async () => {
   if (!englishInput.trim()) return;
+  const startedAt = Date.now();
 
   try {
     setIsConverting(true);
@@ -76,6 +79,7 @@ const handleConvert = async () => {
     setResults([]);
     setAiMessage("");
     setIsRunnable(true);
+    setStatusMessage("");
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -115,6 +119,14 @@ const handleConvert = async () => {
     if (!data.runnable) {
       setIsRunnable(false);
       setAiMessage(data.message || "Invalid request.");
+      recordProgressAttempt({
+        mode: "learn",
+        status: "failed",
+        durationSec: Math.round((Date.now() - startedAt) / 1000),
+        rowsReturned: 0,
+        sourceText: englishInput,
+      });
+      setStatusMessage("Attempt tracked — clarify the prompt and try again.");
       return;
     }
 
@@ -128,11 +140,21 @@ const handleConvert = async () => {
       refreshTables();
     }
 
+    recordProgressAttempt({
+      mode: "learn",
+      status: "success",
+      durationSec: Math.round((Date.now() - startedAt) / 1000),
+      rowsReturned: (data.data || []).length,
+      sourceText: data.generatedSQL || englishInput,
+    });
+    setStatusMessage("Attempt tracked in Progress dashboard.");
+
   } catch (error) {
     console.error(error);
     setHasConverted(true);
     setIsRunnable(false);
     setAiMessage("Something went wrong while processing your request.");
+    setStatusMessage("Attempt not completed due to error. Please try again.");
   } finally {
     setIsConverting(false);
   }
@@ -251,7 +273,7 @@ const handleConvert = async () => {
                         >
                           {Object.values(row).map((val, i) => (
                             <td key={i} className="px-4 py-2.5 text-foreground">
-                              {val}
+                              {String(val ?? "")}
                             </td>
                           ))}
                         </tr>
@@ -272,9 +294,15 @@ const handleConvert = async () => {
           {/* Error area */}
           {hasConverted && (
             <div className="px-4 pb-3">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-accent text-xs">
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+                  isRunnable ? "bg-accent/10 text-accent" : "bg-yellow-500/10 text-yellow-600"
+                }`}
+              >
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                Query executed successfully — {results.length} rows returned
+                {isRunnable
+                  ? `${statusMessage || "Attempt tracked."} ${results.length} row(s) returned.`
+                  : statusMessage || aiMessage || "Please refine your input and retry."}
               </div>
             </div>
           )}
@@ -285,3 +313,7 @@ const handleConvert = async () => {
 };
 
 export default LearnMode;
+
+// File use case:
+// LearnMode converts plain English into SQL and executes it through backend APIs.
+// It now records each attempt so the Progress page reflects real user activity.
