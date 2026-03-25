@@ -1,28 +1,47 @@
-# QueryCraft
+# QueryCraft (Frontend)
 
-QueryCraft is an AI-powered SQL learning and project-building platform.
-It helps students:
-- Convert natural language to SQL
-- Run SQL on their own schema safely
-- Practice in Learn/Test modes
-- Track progress and learning trends
-- Use Developer Mode to design schema and build SQL-backed projects
+QueryCraft is a modern React-based SQL learning platform UI.
+It helps students learn, practice, and build SQL project workflows with a rich interface.
+
+---
+
+## What this repo contains
+
+This repository contains **only the frontend app** (`QueryCraft/`) built with React + TypeScript + Vite.
+
+Backend/API is managed separately in another repository.
+
+---
+
+## Features
+
+- **Landing Page** with rich onboarding UI
+- **Auth screens** (Login/Register flow UI)
+- **Dashboard layout** with responsive sidebar navigation
+- **Learn Mode** for English-to-SQL workflow UI
+- **Test Mode** for manual SQL testing UI
+- **Developer Mode** for:
+  - schema blueprint references
+  - saved project API links
+  - SQL query playbooks
+  - inline query run actions (against configured API)
+- **Tutorials** with search/filter and lesson detail views
+- **Progress** tracking dashboard UI
+- **Settings** for API base URL, table display, safety toggles, etc.
 
 ---
 
 ## Tech Stack
 
-### Frontend (`QueryCraft/`)
-- React 18 + TypeScript + Vite 8
-- Tailwind CSS + shadcn/ui + Radix UI
-- React Router + React Query
-- Recharts (progress visualizations)
-
-### Backend (`sql-ai-backend-hosted/`)
-- Node.js + Express
-- PostgreSQL (`pg`)
-- JWT auth
-- Groq API for English → SQL generation
+- React 18
+- TypeScript
+- Vite 8
+- Tailwind CSS
+- shadcn/ui + Radix UI
+- React Router
+- TanStack React Query
+- Recharts
+- Vitest
 
 ---
 
@@ -30,33 +49,18 @@ It helps students:
 
 ```text
 QueryCraft/
-├── QueryCraft/                 # Frontend (Vite + React)
-│   ├── src/
-│   │   ├── pages/              # Landing, Learn, Test, Progress, Settings, DeveloperMode, etc.
-│   │   ├── components/         # Layout + UI components
-│   │   ├── lib/                # Settings, progress helpers, tutorial/dev helpers
-│   │   └── context/
-│   └── package.json
-└── sql-ai-backend-hosted/      # Backend API (Express + PostgreSQL)
-    ├── middleware/
-    ├── server.js
-    └── package.json
+├── public/
+├── src/
+│   ├── components/
+│   ├── context/
+│   ├── hooks/
+│   ├── lib/
+│   ├── pages/
+│   ├── App.tsx
+│   └── main.tsx
+├── package.json
+└── vite.config.ts
 ```
-
----
-
-## Core Features
-
-- **Learn Mode**: Convert plain English prompt to SQL and execute
-- **Test Mode**: Write raw SQL manually and run against your schema
-- **Tutorials**: Guided SQL lessons with categories and difficulty
-- **Progress**: Attempts, trends, streak-like analytics, goals
-- **Settings**: API URL, row limits, table display, safe-query preferences
-- **Developer Mode**:
-  - Project schema blueprints
-  - Saved API links per project
-  - Query playbooks
-  - Direct query execution with inline results
 
 ---
 
@@ -64,146 +68,77 @@ QueryCraft/
 
 - Node.js 18+
 - npm 9+
-- PostgreSQL database
-- Groq API key
 
 ---
 
-## Environment Variables
+## Setup & Run
 
-Create `.env` in `sql-ai-backend-hosted/`:
-
-```env
-DB_USER=your_db_user
-DB_HOST=your_db_host
-DB_NAME=your_db_name
-DB_PASSWORD=your_db_password
-DB_PORT=5432
-JWT_SECRET=your_jwt_secret
-GROQ_API_KEY=your_groq_api_key
-PORT=3000
+```bash
+npm install
+npm run dev
 ```
 
-Optional frontend env (`QueryCraft/.env`):
+App runs by default at: `http://localhost:5173`
+
+---
+
+## Environment Configuration
+
+You can configure API base URL in either way:
+
+### Option 1: Build-time env
+Create `.env` in this repo:
 
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
-If `VITE_API_URL` is not set, frontend falls back to the deployed API URL configured in app settings.
+### Option 2: Runtime Settings UI
+Open **Settings** page inside app and update **API Base URL**.
 
----
-
-## Local Setup
-
-### 1) Start backend
-
-```bash
-cd sql-ai-backend-hosted
-npm install
-npm run dev
-```
-
-Backend default URL: `http://localhost:3000`
-
-### 2) Start frontend
-
-```bash
-cd QueryCraft
-npm install
-npm run dev
-```
-
-Frontend default URL: `http://localhost:5173`
+> Runtime settings override behavior for user flows like Learn/Test/Developer Mode query execution.
 
 ---
 
 ## Available Scripts
 
-### Frontend (`QueryCraft/package.json`)
-
-- `npm run dev` – start dev server
-- `npm run build` – production build
-- `npm run preview` – preview production build
-- `npm run test` – run Vitest tests
-- `npm run test:watch` – watch mode tests
-- `npm run lint` – lint files
-
-### Backend (`sql-ai-backend-hosted/package.json`)
-
-- `npm run dev` – start server with nodemon
-- `npm run start` – start server
+- `npm run dev` — start development server
+- `npm run build` — build production bundle
+- `npm run preview` — preview production build locally
+- `npm run lint` — run ESLint
+- `npm run test` — run unit tests (Vitest)
+- `npm run test:watch` — run tests in watch mode
 
 ---
 
-## API Overview
+## Important Notes
 
-Base URL: `http://localhost:3000` (or your deployed backend)
+- This frontend expects a compatible external API that supports auth and SQL endpoints.
+- Developer console helper functions are available only in dev mode:
+  - `qcQuery("SELECT * FROM table;")`
+  - `qcSelectAll("table_name")`
+  - `qcSchemaInfo()`
 
-### Auth
-- `POST /register` → create user + dedicated schema + JWT
-- `POST /login` → returns JWT
+---
 
-### SQL
-- `POST /query` (auth) → English input to SQL + execution
-- `POST /execute` (auth) → execute raw SQL
-- `GET /schema` (auth) → current user schema table list
+## Build
 
-### Health / utility
-- `GET /` → server status text
-- `GET /test-db` → sample DB check route
-
-Auth header format:
-
-```http
-Authorization: Bearer <token>
+```bash
+npm run build
 ```
 
----
-
-## Database Model Notes
-
-- On registration, backend creates a user-specific schema (`user_<id>`)
-- All authenticated query execution runs in that user schema
-- Frontend sidebar table list is driven from `/schema`
+This generates the production output in `dist/`.
 
 ---
 
-## Developer Mode Notes
+## Deployment
 
-Developer Mode in frontend supports:
-- Schema blueprint browsing
-- Saved project API links
-- Set saved link as active API URL in settings
-- Run query snippets directly and inspect inline table results
+You can deploy this frontend to Vercel, Netlify, or any static hosting provider.
 
-Also available in **browser dev console (dev mode only)**:
-- `qcQuery("SELECT * FROM table;")`
-- `qcSelectAll("table_name")`
-- `qcSchemaInfo()`
-
----
-
-## Troubleshooting
-
-- **401 Unauthorized**: token missing/expired → login again
-- **No tables shown**: ensure backend running and DB credentials are valid
-- **CORS issues**: verify backend is running and reachable from frontend origin
-- **Build warnings for large chunks**: informational from Vite reporter; app still builds
-- **AI SQL errors**: refine natural-language prompt with clearer table/column intent
-
----
-
-## Deployment Notes
-
-- Frontend can be deployed to Vercel/Netlify
-- Backend can be deployed to Render/Railway/Fly/etc.
-- Set frontend API URL via:
-  - `VITE_API_URL` env at build time, or
-  - QueryCraft Settings page (`apiBaseUrl`)
+Make sure your deployed app can reach your separately hosted backend API.
 
 ---
 
 ## License
 
-ISC (as defined in package metadata)
+ISC
