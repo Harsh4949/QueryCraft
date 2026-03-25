@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Database, BookOpen, FlaskConical, User, LogOut, Menu } from "@/components/icons";
 import { useEffect, useState } from "react";
 
+const navItems = [
+  { label: "Home", path: "/" },
+  { label: "Dashboard", path: "/dashboard" },
+  { label: "Learn SQL", path: "/learn" },
+  { label: "Practice", path: "/test" },
+  { label: "Developer", path: "/developer" },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
@@ -54,12 +62,24 @@ const Navbar = () => {
           <span className="text-foreground">Query<span className="text-primary">Craft</span></span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</Link>
-          <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
-          <Link to="/learn" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Learn</Link>
-          <Link to="/test" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Test</Link>
-          <Link to="/developer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Developer</Link>
+        <div className="hidden md:flex items-center gap-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(`${item.path}/`));
+
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="hidden md:flex items-center gap-3">
@@ -88,11 +108,24 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <div className="flex flex-col p-4 gap-2">
-            <Link to="/" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Home</Link>
-            <Link to="/dashboard" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-            <Link to="/learn" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Learn</Link>
-            <Link to="/test" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Test</Link>
-            <Link to="/developer" className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>Developer</Link>
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(`${item.path}/`));
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
 
             {userName ? (
               <div className="mt-2 space-y-2">

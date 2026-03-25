@@ -18,11 +18,11 @@ import { getApiBaseUrl } from "@/lib/appSettings";
 
 const sidebarItems = [
   { icon: Database, label: "Dashboard", path: "/dashboard" },
-  { icon: BookOpen, label: "Learn Mode", path: "/learn" },
-  { icon: FlaskConical, label: "Test Mode", path: "/test" },
-  { icon: Terminal, label: "Developer Mode", path: "/developer" },
+  { icon: BookOpen, label: "Learn SQL", path: "/learn" },
+  { icon: FlaskConical, label: "Practice SQL", path: "/test" },
+  { icon: Terminal, label: "Developer Hub", path: "/developer" },
   { icon: GraduationCap, label: "Tutorials", path: "/tutorials" },
-  { icon: BarChart3, label: "My Progress", path: "/progress" },
+  { icon: BarChart3, label: "Progress", path: "/progress" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
@@ -130,7 +130,7 @@ const DashboardLayout = () => {
             </Button>
 
             <Link
-              to="/dashboard"
+              to="/"
               className="flex items-center gap-2 font-heading font-bold text-lg"
             >
               <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center">
@@ -143,13 +143,28 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <p className="text-xs">{userName || "User"}</p>
-              {/* <User className="w-4 h-4" /> */}
-            </Button>
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                to="/tutorials"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70 transition"
+              >
+                Tutorials
+              </Link>
+              <Link
+                to="/developer"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition"
+              >
+                Developer Hub
+              </Link>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <User className="w-3.5 h-3.5" />
+              <p className="text-xs font-semibold max-w-[120px] truncate">{userName || "User"}</p>
+            </div>
 
             <Button variant="ghost" size="icon" className="rounded-full" onClick={handleLogOut}>
-                <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
@@ -166,9 +181,12 @@ const DashboardLayout = () => {
               flex flex-col
             `}
           >
-            <nav className="flex-1 p-3 space-y-1">
+            <nav className="flex-1 p-3 space-y-1.5">
+              <p className="px-2 pt-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Workspace
+              </p>
               {sidebarItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
 
                 return (
                   <Link
@@ -176,12 +194,12 @@ const DashboardLayout = () => {
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                      flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                       transition-all duration-200
                       ${
                         isActive
-                          ? "bg-primary/10 text-primary shadow-soft"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          ? "bg-primary/10 text-primary border border-primary/20 shadow-soft"
+                          : "text-muted-foreground border border-transparent hover:bg-muted hover:text-foreground"
                       }
                     `}
                   >
@@ -195,20 +213,24 @@ const DashboardLayout = () => {
             {/* ✅ Database Section */}
             <div className="border-t border-border p-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Database
+                Database Tables
               </h3>
 
-              <div className="space-y-1">
-                {tables.map((table) => (
-                  <button
-                    key={table.table_name}
-                    onClick={() => handleTableClick(table.table_name)}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
-                  >
-                    {table.table_name}
-                  </button>
-                ))}
-              </div>
+              {tables.length ? (
+                <div className="space-y-1 max-h-48 overflow-auto pr-1">
+                  {tables.map((table) => (
+                    <button
+                      key={table.table_name}
+                      onClick={() => handleTableClick(table.table_name)}
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                    >
+                      {table.table_name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground px-1 py-2">No tables loaded yet.</p>
+              )}
             </div>
           </aside>
 
