@@ -17,9 +17,11 @@ import { useState, useEffect, useRef } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { getApiBaseUrl } from "@/lib/appSettings";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const sidebarItems = [
   { icon: Database, label: "Dashboard", path: "/dashboard" },
+  { icon: User, label: "Profile", path: "/profile" },
   { icon: BookOpen, label: "Learn SQL", path: "/learn" },
   { icon: FlaskConical, label: "Practice SQL", path: "/test" },
   { icon: Terminal, label: "Developer Hub", path: "/developer" },
@@ -36,6 +38,7 @@ const DashboardLayout = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const[userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [tables, setTables] = useState<any[]>([]);
 
   // ✅ Fetch tables function (shared globally)
@@ -68,7 +71,7 @@ const DashboardLayout = () => {
     fetchTables();
   }, []);
 
-  //Extract username from token
+  // Extract username from token and hydrate profile data when available.
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -77,6 +80,25 @@ const DashboardLayout = () => {
       const payload = JSON.parse(atob(token.split(".")[1]));
       console.log("Token payload:", payload);
       setUserName( payload.username );
+
+      fetch(`${getApiBaseUrl()}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then(async (res) => {
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data;
+        })
+        .then((profile) => {
+          if (!profile) return;
+          setUserName(profile.display_name || payload.username || "User");
+          setAvatarUrl(profile.avatar_url || "");
+        })
+        .catch(() => {
+          // Ignore profile read failures and keep JWT fallback name.
+        });
     } catch (err) {
       console.error("Failed to parse token", err);
     }
@@ -161,9 +183,16 @@ const DashboardLayout = () => {
               </Link>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
-              <User className="w-3.5 h-3.5" />
-              <p className="text-xs font-semibold max-w-[120px] truncate">{userName || "User"}</p>
+            <div className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <Avatar className="w-5 h-5 ring-1 ring-primary/40 ring-offset-1 ring-offset-background">
+                <AvatarImage src={avatarUrl} alt={userName || "User"} />
+                <AvatarFallback className="text-[10px] font-semibold bg-primary/20 text-primary">
+                  {(userName || "U").slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Link to="/profile" className="text-xs font-semibold max-w-[120px] truncate hover:underline">
+                {userName || "User"}
+              </Link>
             </div>
 
             <ThemeToggleButton />

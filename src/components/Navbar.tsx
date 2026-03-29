@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Database, BookOpen, FlaskConical, User, LogOut, Menu } from "@/components/icons";
 import { useEffect, useState } from "react";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getApiBaseUrl } from "@/lib/appSettings";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -17,6 +19,7 @@ const Navbar = () => {
   const isLanding = location.pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   // Keep auth user visible on landing navbar and hide login/signup after authentication.
   useEffect(() => {
@@ -29,7 +32,27 @@ const Navbar = () => {
 
       try {
         const payload = JSON.parse(atob(token.split(".")[1] || ""));
-        setUserName(payload.username || payload.name || payload.email || "User");
+        const fallbackName = payload.username || payload.name || payload.email || "User";
+        setUserName(fallbackName);
+
+        fetch(`${getApiBaseUrl()}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then(async (res) => {
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data;
+          })
+          .then((profile) => {
+            if (!profile) return;
+            setUserName(profile.display_name || fallbackName);
+            setAvatarUrl(profile.avatar_url || "");
+          })
+          .catch(() => {
+            // Keep fallback token identity when profile request fails.
+          });
       } catch {
         setUserName("User");
       }
@@ -46,6 +69,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUserName(null);
+    setAvatarUrl("");
     setMobileOpen(false);
   };
 
@@ -86,8 +110,13 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggleButton />
           {userName ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-              <User className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+              <Avatar className="w-5 h-5">
+                <AvatarImage src={avatarUrl} alt={userName} />
+                <AvatarFallback className="text-[10px] font-semibold bg-primary/20 text-primary">
+                  {(userName || "U").slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <span className="max-w-[150px] truncate">{userName}</span>
             </div>
           ) : (
@@ -135,7 +164,12 @@ const Navbar = () => {
             {userName ? (
               <div className="mt-2 space-y-2">
                 <div className="inline-flex w-full items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-                  <User className="w-4 h-4" />
+                  <Avatar className="w-5 h-5">
+                    <AvatarImage src={avatarUrl} alt={userName} />
+                    <AvatarFallback className="text-[10px] font-semibold bg-primary/20 text-primary">
+                      {(userName || "U").slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="truncate">{userName}</span>
                 </div>
                 <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>
