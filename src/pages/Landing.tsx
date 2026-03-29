@@ -10,10 +10,11 @@ import {
   Database,
   FlaskConical,
   Terminal,
+  Users,
   Zap,
 } from "@/components/icons";
 
-const features = [
+const coreFeatures = [
   {
     icon: BookOpen,
     title: "English to SQL",
@@ -44,10 +45,27 @@ const features = [
   },
 ];
 
+const newFeatures = [
+  {
+    icon: Users,
+    title: "Team Workspaces",
+    description: "Collaborate in shared workspaces with role-based access and workspace-aware SQL runs.",
+    color: "text-secondary",
+    bg: "bg-secondary/10",
+  },
+  {
+    icon: BarChart3,
+    title: "Performance Insights",
+    description: "Track execution time, row-count trends, and slow-query warnings in one dashboard.",
+    color: "text-primary",
+    bg: "bg-primary/10",
+  },
+];
+
 const quickStats = [
   { label: "Learning Modes", value: "3", icon: BookOpen },
-  { label: "Built-in Tutorials", value: "10+", icon: Code2 },
-  { label: "Practice Tracking", value: "Live", icon: BarChart3 },
+  { label: "Team Workspaces", value: "RBAC", icon: Users },
+  { label: "Performance Insights", value: "Live", icon: BarChart3 },
   { label: "Start Time", value: "< 1 min", icon: Clock },
 ];
 
@@ -70,7 +88,8 @@ const highlights = [
   "Natural language to SQL conversion",
   "Practice-focused Learn and Test modes",
   "Tutorials from beginner to advanced",
-  "Progress analytics for consistent growth",
+  "Workspace-aware execution across Learn/Test",
+  "Performance analytics and slow-query alerts",
 ];
 
 const Landing = () => {
@@ -127,7 +146,7 @@ const Landing = () => {
 
       <section className="border-y border-border bg-card/40 dark:bg-muted/20">
         <div className="container mx-auto px-4 py-5">
-          <div className="grid md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3">
             {highlights.map((item) => (
               <div key={item} className="inline-flex items-center gap-2 text-sm text-muted-foreground rounded-lg px-3 py-2 bg-background/80 dark:bg-card/80 border border-border">
                 <CheckCircle2 className="w-4 h-4 text-secondary shrink-0" />
@@ -224,14 +243,14 @@ const Landing = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Everything you need in one workspace</h2>
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Everything you need in one SQL platform</h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               Built to support daily SQL learning, revision, and confidence building.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {features.map((f) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-10">
+            {coreFeatures.map((f) => (
               <div key={f.title} className="rounded-2xl bg-card border border-border p-7 shadow-card dark:shadow-none animate-fade-in">
                 <div className={`w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center mb-4`}>
                   <f.icon className={`w-6 h-6 ${f.color}`} />
@@ -240,6 +259,24 @@ const Landing = () => {
                 <p className="text-muted-foreground text-sm leading-relaxed">{f.description}</p>
               </div>
             ))}
+          </div>
+
+          <div className="max-w-6xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
+              <Zap className="w-3.5 h-3.5" />
+              New Features
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {newFeatures.map((f) => (
+                <div key={f.title} className="rounded-2xl bg-card border border-primary/20 p-7 shadow-card dark:shadow-none animate-fade-in">
+                  <div className={`w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center mb-4`}>
+                    <f.icon className={`w-6 h-6 ${f.color}`} />
+                  </div>
+                  <h3 className="text-lg font-heading font-bold text-foreground mb-2">{f.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{f.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

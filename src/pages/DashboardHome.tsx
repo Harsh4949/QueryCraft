@@ -11,11 +11,20 @@ import {
   Zap,
   AlertCircle,
   Terminal,
+  Users,
 } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { getAppSettings } from "@/lib/appSettings";
-import { buildProgressStats, buildTopicMastery, getProgressData, getWeakTopics, type ProgressData } from "@/lib/progress";
+import {
+  buildProgressStats,
+  buildTopicMastery,
+  getProgressData,
+  getSlowQueryWarnings,
+  getWeakTopics,
+  SLOW_QUERY_THRESHOLD_SEC,
+  type ProgressData,
+} from "@/lib/progress";
 
 const formatLastSeen = (value?: string) => {
   if (!value) return "No activity yet";
@@ -116,6 +125,7 @@ const DashboardHome = () => {
   }, [progressData, tables]);
 
   const recentAttempts = useMemo(() => progressData?.attempts.slice(0, 4) ?? [], [progressData]);
+  const slowQueries = useMemo(() => (progressData ? getSlowQueryWarnings(progressData.attempts, SLOW_QUERY_THRESHOLD_SEC, 3) : []), [progressData]);
 
   const focusTopic = useMemo(() => {
     if (!progressData) return null;
@@ -177,30 +187,30 @@ const DashboardHome = () => {
         <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-200 hover:shadow-hover">
           <div className="flex items-center gap-2 mb-2">
             <AlertCircle className="w-4 h-4 text-secondary" />
-            <h3 className="font-heading font-bold text-foreground">Recent Attempts</h3>
+            <h3 className="font-heading font-bold text-foreground">Performance Watch</h3>
           </div>
-          {recentAttempts.length ? (
+          {slowQueries.length ? (
             <div className="space-y-2">
-              {recentAttempts.map((item) => (
+              {slowQueries.map((item) => (
                 <div key={item.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                   <div>
                     <p className="text-sm text-foreground font-medium">{item.topic}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.mode.toUpperCase()}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.mode.toUpperCase()} • {item.durationSec}s</p>
                   </div>
-                  <Badge variant={item.status === "success" ? "secondary" : "destructive"}>
-                    {item.status}
+                  <Badge variant="destructive">
+                    Slow
                   </Badge>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No attempts yet. Start with Learn Mode.</p>
+            <p className="text-sm text-muted-foreground">No slow-query warning right now. Great query performance.</p>
           )}
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Link to={quickStartPath} className="group">
           <div className="rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-200 hover:shadow-hover hover:-translate-y-0.5">
             <div className="flex items-center gap-3 mb-3">
@@ -227,6 +237,21 @@ const DashboardHome = () => {
             <p className="text-sm text-muted-foreground mb-3">Write SQL and validate your skills with instant feedback.</p>
             <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium group-hover:gap-2 transition-all">
               Start Test <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        </Link>
+
+        <Link to="/workspaces" className="group">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-200 hover:shadow-hover hover:-translate-y-0.5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-heading font-bold text-foreground">Team Workspaces</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">Switch workspace, manage members, and keep queries scoped correctly.</p>
+            <span className="inline-flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
+              Open Workspaces <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </div>
         </Link>
