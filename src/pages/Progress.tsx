@@ -7,13 +7,16 @@ import { Progress as ProgressBar } from "@/components/ui/progress";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   buildProgressStats,
+  buildRowCountTrend,
   buildTopicMastery,
   getProgressData,
+  getSlowQueryWarnings,
+  SLOW_QUERY_THRESHOLD_SEC,
   getWeakTopics,
   type ProgressData,
   type ProgressMode,
 } from "@/lib/progress";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart } from "recharts";
 
 const chartConfig = {
   attempts: {
@@ -29,6 +32,13 @@ const chartConfig = {
 const modeVariant: Record<ProgressMode, "secondary" | "outline"> = {
   learn: "secondary",
   test: "outline",
+};
+
+const rowChartConfig = {
+  rows: {
+    label: "Rows",
+    color: "hsl(var(--primary))",
+  },
 };
 
 const formatDate = (value: string) => {
@@ -113,6 +123,8 @@ const Progress = () => {
 
   const weakTopics = useMemo(() => getWeakTopics(topicMastery), [topicMastery]);
   const recentAttempts = useMemo(() => progressData?.attempts.slice(0, 8) ?? [], [progressData]);
+  const rowTrend = useMemo(() => (progressData ? buildRowCountTrend(progressData.attempts) : []), [progressData]);
+  const slowQueryWarnings = useMemo(() => (progressData ? getSlowQueryWarnings(progressData.attempts) : []), [progressData]);
 
   if (isLoading) {
     return <ProgressPageSkeleton />;
@@ -333,6 +345,58 @@ const Progress = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2 border-border shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-heading">Row Count Trend</CardTitle>
+            <CardDescription>Rows returned across the last 7 days</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            {rowTrend.length ? (
+              <ChartContainer config={rowChartConfig} className="h-56 w-full">
+                <BarChart data={rowTrend}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="dateLabel" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                  <Bar dataKey="rows" fill="var(--color-rows)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground">Row trend data not available yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-heading">Slow-Query Warnings</CardTitle>
+            <CardDescription>Queries slower than {SLOW_QUERY_THRESHOLD_SEC}s</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-2">
+            {slowQueryWarnings.length ? (
+              slowQueryWarnings.map((entry) => (
+                <div key={entry.id} className="rounded-lg border border-border bg-muted/40 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={modeVariant[entry.mode]}>{entry.mode.toUpperCase()}</Badge>
+                      <span className="text-sm font-medium text-foreground">{entry.topic}</span>
+                    </div>
+                    <Badge variant="destructive">{formatDuration(entry.durationSec)}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDate(entry.dateISO)} • Rows: {entry.rowsReturned} • {entry.status === "success" ? "Succeeded" : "Failed"}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-border bg-muted/40 p-3">
+                <p className="text-sm text-foreground font-medium">No slow queries detected</p>
+                <p className="text-xs text-muted-foreground mt-1">Current query performance is within threshold.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="lg:col-span-2 border-border shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">Recent Activity</CardTitle>

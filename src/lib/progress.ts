@@ -19,6 +19,22 @@ export interface DailyTrendPoint {
   accuracy: number;
 }
 
+export interface RowCountTrendPoint {
+  dateLabel: string;
+  rows: number;
+  avgRowsPerAttempt: number;
+}
+
+export interface SlowQueryWarning {
+  id: string;
+  dateISO: string;
+  mode: ProgressMode;
+  topic: string;
+  durationSec: number;
+  rowsReturned: number;
+  status: AttemptStatus;
+}
+
 export interface ProgressGoals {
   dailyAttemptTarget: number;
   dailyAttemptsCompleted: number;
@@ -59,6 +75,7 @@ export interface RecordProgressAttemptInput {
 }
 
 const PROGRESS_STORAGE_KEY = "querycraft_progress_attempts_v1";
+export const SLOW_QUERY_THRESHOLD_SEC = 3;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -236,6 +253,48 @@ export function buildProgressStats(data: ProgressData): ProgressStats {
     currentStreak,
     bestStreak,
   };
+}
+
+export function buildRowCountTrend(attempts: ProgressAttempt[]): RowCountTrendPoint[] {
+  const points: RowCountTrendPoint[] = [];
+
+  for (let daysAgo = 6; daysAgo >= 0; daysAgo -= 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - daysAgo);
+    const dateKey = getLocalDateKey(date);
+
+    const dayAttempts = attempts.filter((entry) => getLocalDateKeyFromISO(entry.dateISO) === dateKey);
+    const rows = dayAttempts.reduce((sum, entry) => sum + safeNumber(entry.rowsReturned, 0), 0);
+
+    points.push({
+      dateLabel: formatDateLabel(daysAgo),
+      rows,
+      avgRowsPerAttempt: dayAttempts.length ? Math.round(rows / dayAttempts.length) : 0,
+    });
+  }
+
+  return points;
+}
+
+export function getSlowQueryWarnings(
+  attempts: ProgressAttempt[],
+  thresholdSec = SLOW_QUERY_THRESHOLD_SEC,
+  limit = 6,
+): SlowQueryWarning[] {
+  return attempts
+    .filter((entry) => safeNumber(entry.durationSec, 0) >= thresholdSec)
+    .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+    .slice(0, limit)
+    .map((entry) => ({
+      id: entry.id,
+      dateISO: entry.dateISO,
+      mode: entry.mode,
+      topic: entry.topic,
+      durationSec: entry.durationSec,
+      rowsReturned: entry.rowsReturned,
+      status: entry.status,
+    }));
 }
 
 function formatDateLabel(daysAgo: number): string {

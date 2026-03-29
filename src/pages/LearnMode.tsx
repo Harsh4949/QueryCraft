@@ -206,6 +206,14 @@ const handleConvert = async () => {
     setSqlOutput(data.generatedSQL);
     setResults((data.data || []).slice(0, currentSettings.resultRowLimit));
 
+    const executionDurationSec = Number.isFinite(Number(data.executionMs))
+      ? Math.max(1, Math.round(Number(data.executionMs) / 1000))
+      : Math.round((Date.now() - startedAt) / 1000);
+
+    const rowsReturned = Number.isFinite(Number(data.rowCount))
+      ? Number(data.rowCount)
+      : (data.data || []).length;
+
     // Refresh schema if table created/dropped
     if (data.schemaChanged) {
       refreshTables();
@@ -214,8 +222,8 @@ const handleConvert = async () => {
     recordProgressAttempt({
       mode: "learn",
       status: "success",
-      durationSec: Math.round((Date.now() - startedAt) / 1000),
-      rowsReturned: (data.data || []).length,
+      durationSec: executionDurationSec,
+      rowsReturned,
       sourceText: data.generatedSQL || englishInput,
     });
 
@@ -227,7 +235,11 @@ const handleConvert = async () => {
       return;
     }
 
-    setStatusMessage("Attempt tracked in Progress dashboard.");
+    if (data.slowQuery) {
+      setStatusMessage(`Slow query warning: took ~${executionDurationSec}s. Logged in Performance Insights.`);
+    } else {
+      setStatusMessage("Attempt tracked in Progress dashboard.");
+    }
 
   } catch (error) {
     console.error(error);
@@ -242,7 +254,7 @@ const handleConvert = async () => {
 
 
   return (
-    <div className="h-full max-w-6xl animate-fade-in">
+    <div className="max-w-6xl w-full animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Learn Mode</h1>
         <p className="text-sm text-muted-foreground">Type what you want in plain English, and we'll convert it to SQL.</p>
@@ -253,9 +265,9 @@ const handleConvert = async () => {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 h-[calc(100%-5rem)]">
+      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
         {/* Left: English Input */}
-        <div className="flex flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="flex flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden min-h-[520px]">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/50">
             <Lightbulb className="w-4 h-4 text-primary" />
             <span className="text-sm font-heading font-semibold text-foreground">English Input</span>
@@ -286,7 +298,7 @@ const handleConvert = async () => {
         </div>
 
         {/* Right: Output */}
-        <div className="flex flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="flex flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden min-h-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-border bg-muted/50">
             <button

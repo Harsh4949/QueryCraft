@@ -156,14 +156,24 @@ const TestMode = () => {
           throw new Error(data.error || "Failed to execute SQL query");
         }
         setResults((data.data || []).slice(0, settings.resultRowLimit));
+        const executionDurationSec = Number.isFinite(Number(data.executionMs))
+          ? Math.max(1, Math.round(Number(data.executionMs) / 1000))
+          : Math.round((Date.now() - startedAt) / 1000);
+        const rowsReturned = Number.isFinite(Number(data.rowCount))
+          ? Number(data.rowCount)
+          : (data.data || []).length;
         setHasRun(true);
-        setRunMessage("Attempt tracked in Progress dashboard.");
+        setRunMessage(
+          data.slowQuery
+            ? `Slow query warning: took ~${executionDurationSec}s. Logged in Performance Insights.`
+            : "Attempt tracked in Progress dashboard.",
+        );
 
         recordProgressAttempt({
           mode: "test",
           status: "success",
-          durationSec: Math.round((Date.now() - startedAt) / 1000),
-          rowsReturned: (data.data || []).length,
+          durationSec: executionDurationSec,
+          rowsReturned,
           sourceText: autoSQL,
         });
       } catch (error) {
@@ -241,8 +251,18 @@ const TestMode = () => {
     }
 
     setResults((data.data || []).slice(0, settings.resultRowLimit));
+    const executionDurationSec = Number.isFinite(Number(data.executionMs))
+      ? Math.max(1, Math.round(Number(data.executionMs) / 1000))
+      : Math.round((Date.now() - startedAt) / 1000);
+    const rowsReturned = Number.isFinite(Number(data.rowCount))
+      ? Number(data.rowCount)
+      : (data.data || []).length;
     setHasRun(true);
-    setRunMessage("Attempt tracked in Progress dashboard.");
+    setRunMessage(
+      data.slowQuery
+        ? `Slow query warning: took ~${executionDurationSec}s. Logged in Performance Insights.`
+        : "Attempt tracked in Progress dashboard.",
+    );
     console.log("Query results:", data);
     // 🔥 Refresh sidebar if schema changed
     if (data.schemaChanged) {
@@ -252,8 +272,8 @@ const TestMode = () => {
     recordProgressAttempt({
       mode: "test",
       status: "success",
-      durationSec: Math.round((Date.now() - startedAt) / 1000),
-      rowsReturned: (data.data || []).length,
+      durationSec: executionDurationSec,
+      rowsReturned,
       sourceText: sqlInput,
     });
 
