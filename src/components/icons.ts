@@ -1,4 +1,4 @@
-import { Database, BookOpen, FlaskConical, BarChart3, Settings, LogOut, User, Menu, Play, Zap, Code2, FileText, ArrowRight, CheckCircle2, Clock, Terminal, Table2, AlertCircle, Lightbulb, ChevronDown, GraduationCap, ChevronRight, Tag } from "lucide-react";
+import { Database, BookOpen, FlaskConical, BarChart3, Settings, LogOut, User, Menu, Play, Zap, Code2, FileText, ArrowRight, CheckCircle2, Clock, Terminal, Table2, AlertCircle, Lightbulb, ChevronDown, GraduationCap, ChevronRight, Tag, Sun, Moon } from "lucide-react";
 
 export {
   Database,
@@ -24,4 +24,6 @@ export {
   GraduationCap,
   ChevronRight,
   Tag,
+  Sun,
+  Moon,
 };

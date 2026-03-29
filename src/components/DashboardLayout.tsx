@@ -15,6 +15,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { getApiBaseUrl } from "@/lib/appSettings";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 const sidebarItems = [
   { icon: Database, label: "Dashboard", path: "/dashboard" },
@@ -163,6 +164,8 @@ const DashboardLayout = () => {
               <p className="text-xs font-semibold max-w-[120px] truncate">{userName || "User"}</p>
             </div>
 
+            <ThemeToggleButton />
+
             <Button variant="ghost" size="icon" className="rounded-full" onClick={handleLogOut}>
               <LogOut className="w-4 h-4" />
             </Button>
@@ -258,3 +261,4 @@ export default DashboardLayout;
 // DashboardLayout provides the authenticated shell for all main pages.
 // It handles app navigation, user identity display, and database table sidebar loading.
 // API calls in this file respect the configurable backend base URL from Settings.
+// It now also provides a direct light/dark theme toggle in the dashboard header.

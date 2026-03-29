@@ -76,7 +76,7 @@ const highlights = [
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
-      <section className="relative gradient-hero pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10 dark:from-background dark:via-muted/40 dark:to-background">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
@@ -108,7 +108,7 @@ const Landing = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-12 animate-fade-in">
               {quickStats.map((item) => (
-                <div key={item.label} className="rounded-xl border border-border bg-card/70 backdrop-blur-sm p-4 text-left shadow-card">
+                <div key={item.label} className="rounded-xl border border-border bg-card/80 dark:bg-card/95 backdrop-blur-sm p-4 text-left shadow-card">
                   <div className="inline-flex w-8 h-8 rounded-lg bg-primary/10 items-center justify-center mb-2">
                     <item.icon className="w-4 h-4 text-primary" />
                   </div>
@@ -119,17 +119,17 @@ const Landing = () => {
             </div>
           </div>
 
-          <div className="absolute top-20 left-10 w-20 h-20 rounded-2xl bg-primary/5 animate-float" />
-          <div className="absolute top-40 right-16 w-14 h-14 rounded-xl bg-accent/10 animate-float" />
-          <div className="absolute bottom-10 left-1/4 w-10 h-10 rounded-lg bg-secondary/10 animate-float" />
+          <div className="absolute top-20 left-10 w-20 h-20 rounded-2xl bg-primary/5 dark:bg-primary/15 animate-float" />
+          <div className="absolute top-40 right-16 w-14 h-14 rounded-xl bg-accent/10 dark:bg-accent/20 animate-float" />
+          <div className="absolute bottom-10 left-1/4 w-10 h-10 rounded-lg bg-secondary/10 dark:bg-secondary/20 animate-float" />
         </div>
       </section>
 
-      <section className="border-y border-border bg-card/40">
+      <section className="border-y border-border bg-card/40 dark:bg-muted/20">
         <div className="container mx-auto px-4 py-5">
           <div className="grid md:grid-cols-4 gap-3">
             {highlights.map((item) => (
-              <div key={item} className="inline-flex items-center gap-2 text-sm text-muted-foreground rounded-lg px-3 py-2 bg-background/80 border border-border">
+              <div key={item} className="inline-flex items-center gap-2 text-sm text-muted-foreground rounded-lg px-3 py-2 bg-background/80 dark:bg-card/80 border border-border">
                 <CheckCircle2 className="w-4 h-4 text-secondary shrink-0" />
                 {item}
               </div>
@@ -148,8 +148,8 @@ const Landing = () => {
 
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {steps.map((step, index) => (
-            <div key={step.title} className="rounded-2xl border border-border bg-card p-7 shadow-card relative overflow-hidden">
-              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5" />
+            <div key={step.title} className="rounded-2xl border border-border bg-card p-7 shadow-card relative overflow-hidden dark:shadow-none">
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 dark:bg-primary/15" />
               <div className="w-9 h-9 rounded-full gradient-primary text-primary-foreground font-heading font-bold text-sm flex items-center justify-center mb-4">
                 {index + 1}
               </div>
@@ -160,7 +160,7 @@ const Landing = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-muted/40">
+      <section className="py-20 bg-muted/40 dark:bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">Three focused modes to master SQL</h2>
@@ -171,7 +171,7 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Link to="/learn" className="group">
-              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
+              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card dark:shadow-none transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 gradient-primary" />
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
                   <BookOpen className="w-7 h-7 text-primary" />
@@ -187,7 +187,7 @@ const Landing = () => {
             </Link>
 
             <Link to="/test" className="group">
-              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
+              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card dark:shadow-none transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 gradient-accent" />
                 <div className="w-14 h-14 rounded-xl bg-secondary/10 flex items-center justify-center mb-5">
                   <FlaskConical className="w-7 h-7 text-secondary" />
@@ -203,7 +203,7 @@ const Landing = () => {
             </Link>
 
             <Link to="/developer" className="group">
-              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
+              <div className="relative rounded-2xl border border-border bg-card p-8 shadow-card dark:shadow-none transition-all duration-300 hover:shadow-hover hover:-translate-y-1 overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 gradient-primary" />
                 <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
                   <Terminal className="w-7 h-7 text-accent" />
@@ -232,7 +232,7 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {features.map((f) => (
-              <div key={f.title} className="rounded-2xl bg-card border border-border p-7 shadow-card animate-fade-in">
+              <div key={f.title} className="rounded-2xl bg-card border border-border p-7 shadow-card dark:shadow-none animate-fade-in">
                 <div className={`w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center mb-4`}>
                   <f.icon className={`w-6 h-6 ${f.color}`} />
                 </div>
@@ -246,7 +246,7 @@ const Landing = () => {
 
       <section className="pb-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto rounded-3xl border border-border bg-card shadow-hover p-8 md:p-12 text-center relative overflow-hidden">
+          <div className="max-w-5xl mx-auto rounded-3xl border border-border bg-card shadow-hover dark:shadow-none p-8 md:p-12 text-center relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 gradient-primary" />
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
               Ready to become confident in SQL?

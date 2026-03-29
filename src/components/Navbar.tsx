@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Database, BookOpen, FlaskConical, User, LogOut, Menu } from "@/components/icons";
 import { useEffect, useState } from "react";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -83,6 +84,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggleButton />
           {userName ? (
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
               <User className="w-4 h-4" />
@@ -100,9 +102,12 @@ const Navbar = () => {
           )}
         </div>
 
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-          <Menu className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggleButton />
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {mobileOpen && (
