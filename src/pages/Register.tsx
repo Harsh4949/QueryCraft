@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Database, ArrowRight, CheckCircle2 } from "@/components/icons";
 import { useState } from "react";
+import { getApiBaseUrl } from "@/lib/appSettings";
 
 //om@123
 const Register = () => {
@@ -27,7 +28,7 @@ const handleRegister = async (e: React.FormEvent) => {
   }
 
   try {
-    const response = await fetch("https://sql-ai-backend-hosted.onrender.com/register", {
+    const response = await fetch(`${getApiBaseUrl()}/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

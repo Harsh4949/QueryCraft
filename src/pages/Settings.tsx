@@ -190,7 +190,7 @@ const SettingsPage = () => {
             <Input
               value={settings.apiBaseUrl}
               onChange={(e) => setSettings((prev) => ({ ...prev, apiBaseUrl: e.target.value }))}
-              placeholder="https://sql-ai-backend-hosted.onrender.com"
+              placeholder="http://localhost:3000"
             />
             <div className="flex items-center gap-2">
               <Button

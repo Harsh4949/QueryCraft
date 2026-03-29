@@ -43,7 +43,7 @@ const LearnMode = () => {
 //   try {
 //     setIsConverting(true);
 
-//     const response = await fetch("https://sql-ai-backend-hosted.onrender.com/query", {
+//     const response = await fetch("http://localhost:3000/query", {
 //       method: "POST",
 //       headers: {
 //         "Content-Type": "application/json",

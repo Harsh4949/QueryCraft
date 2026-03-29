@@ -10,7 +10,8 @@ import {
   LogOut,
   User,
   Menu,
-  GraduationCap
+  GraduationCap,
+  FileText
 } from "@/components/icons";
 import { useState, useEffect, useRef } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
@@ -22,6 +23,7 @@ const sidebarItems = [
   { icon: BookOpen, label: "Learn SQL", path: "/learn" },
   { icon: FlaskConical, label: "Practice SQL", path: "/test" },
   { icon: Terminal, label: "Developer Hub", path: "/developer" },
+  { icon: FileText, label: "Saved Queries", path: "/saved-queries" },
   { icon: GraduationCap, label: "Tutorials", path: "/tutorials" },
   { icon: BarChart3, label: "Progress", path: "/progress" },
   { icon: Settings, label: "Settings", path: "/settings" },

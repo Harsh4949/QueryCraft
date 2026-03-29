@@ -14,7 +14,7 @@ export interface AppSettings {
 const SETTINGS_STORAGE_KEY = "querycraft_app_settings_v1";
 
 const FALLBACK_API_BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) || "https://sql-ai-backend-hosted.onrender.com";
+  (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:3000";
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultMode: "learn",
@@ -35,11 +35,18 @@ function toBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function normalizeApiBaseUrl(value: unknown, fallback: string): string {
+  const candidate = String(value || "").trim();
+  const normalized = candidate.replace(/\/+$/, "");
+  if (normalized) return normalized;
+  return fallback.replace(/\/+$/, "");
+}
+
 function sanitizeSettings(value: unknown): AppSettings {
   const raw = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
 
   const defaultMode = raw.defaultMode === "test" ? "test" : "learn";
-  const apiBaseUrl = String(raw.apiBaseUrl || DEFAULT_SETTINGS.apiBaseUrl).trim();
+  const apiBaseUrl = normalizeApiBaseUrl(raw.apiBaseUrl, DEFAULT_SETTINGS.apiBaseUrl);
 
   return {
     defaultMode,
@@ -91,7 +98,7 @@ export function resetAppSettings(): AppSettings {
 
 export function getApiBaseUrl(): string {
   const settings = getAppSettings();
-  return settings.apiBaseUrl || DEFAULT_SETTINGS.apiBaseUrl;
+  return normalizeApiBaseUrl(settings.apiBaseUrl, DEFAULT_SETTINGS.apiBaseUrl);
 }
 
 // File use case:

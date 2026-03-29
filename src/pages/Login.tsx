@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Database, ArrowRight, Zap } from "@/components/icons";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiBaseUrl } from "@/lib/appSettings";
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ const Login = () => {
         e.preventDefault();
 
         try {
-            const response = await fetch("https://sql-ai-backend-hosted.onrender.com/login", {
+            const response = await fetch(`${getApiBaseUrl()}/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

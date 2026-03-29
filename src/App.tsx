@@ -14,6 +14,7 @@ import Tutorials from "@/pages/Tutorials";
 import DeveloperMode from "@/pages/DeveloperMode";
 import Progress from "@/pages/Progress";
 import SettingsPage from "@/pages/Settings";
+import SavedQueries from "@/pages/SavedQueries";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/developer" element={<DeveloperMode />} />
             <Route path="/tutorials" element={<Tutorials />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/saved-queries" element={<SavedQueries />} />
             <Route path="/settings" element={<SettingsPage />} />
 
           </Route>
