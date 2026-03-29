@@ -14,7 +14,7 @@ export interface AppSettings {
 const SETTINGS_STORAGE_KEY = "querycraft_app_settings_v1";
 
 const FALLBACK_API_BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:3000";
+  (import.meta.env.VITE_API_URL as string | undefined) || "https://querycraft-backend-harsh.onrender.com";
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultMode: "learn",

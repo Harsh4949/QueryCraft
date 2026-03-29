@@ -190,7 +190,7 @@ const SettingsPage = () => {
             <Input
               value={settings.apiBaseUrl}
               onChange={(e) => setSettings((prev) => ({ ...prev, apiBaseUrl: e.target.value }))}
-              placeholder="http://localhost:3000"
+              placeholder="https://querycraft-backend-harsh.onrender.com"
             />
             <div className="flex items-center gap-2">
               <Button
