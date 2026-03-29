@@ -16,6 +16,7 @@ import Progress from "@/pages/Progress";
 import SettingsPage from "@/pages/Settings";
 import SavedQueries from "@/pages/SavedQueries";
 import Profile from "@/pages/Profile";
+import TeamWorkspaces from "@/pages/TeamWorkspaces";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/progress" element={<Progress />} />
             <Route path="/saved-queries" element={<SavedQueries />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/workspaces" element={<TeamWorkspaces />} />
             <Route path="/settings" element={<SettingsPage />} />
 
           </Route>

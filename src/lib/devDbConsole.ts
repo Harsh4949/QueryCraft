@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/appSettings";
+import { buildWorkspaceHeaders } from "@/lib/workspace";
 
 type QueryResponse = {
   data?: unknown[];
@@ -31,10 +32,7 @@ async function executeSql(query: string, options?: QueryOptions): Promise<QueryR
 
   const response = await fetch(`${options?.baseUrl || getApiBaseUrl()}/execute`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: buildWorkspaceHeaders(token, true),
     body: JSON.stringify({ query }),
   });
 

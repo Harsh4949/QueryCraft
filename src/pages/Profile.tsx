@@ -55,6 +55,17 @@ function getApiErrorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
+function getReadableErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    if (error.message === "Failed to fetch") {
+      return `Cannot connect to backend at ${getApiBaseUrl()}. Start backend server and refresh.`;
+    }
+    return error.message;
+  }
+
+  return fallback;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -113,7 +124,7 @@ const Profile = () => {
     } catch (error) {
       toast({
         title: "Profile load failed",
-        description: error instanceof Error ? error.message : "Unable to load profile",
+        description: getReadableErrorMessage(error, "Unable to load profile"),
         variant: "destructive",
       });
     } finally {
@@ -182,7 +193,7 @@ const Profile = () => {
     } catch (error) {
       toast({
         title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update profile",
+        description: getReadableErrorMessage(error, "Failed to update profile"),
         variant: "destructive",
       });
     } finally {

@@ -7,6 +7,7 @@ import { useContext } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { recordProgressAttempt } from "@/lib/progress";
 import { getApiBaseUrl, getAppSettings } from "@/lib/appSettings";
+import { buildWorkspaceHeaders, getActiveWorkspaceId, WORKSPACE_CHANGED_EVENT } from "@/lib/workspace";
 
 
 
@@ -30,11 +31,80 @@ const TestMode = () => {
   const [results, setResults] = useState<any[]>([]);
   const [runMessage, setRunMessage] = useState("");
   const [runError, setRunError] = useState(false);
+  const [activeWorkspaceLabel, setActiveWorkspaceLabel] = useState("Personal workspace");
+  const [activeWorkspaceRole, setActiveWorkspaceRole] = useState<string | null>(null);
   const tableSettings = getAppSettings();
   
   const { refreshTables } = useContext(DatabaseContext);
  const location = useLocation();
  const navigate = useNavigate();
+
+ const loadActiveWorkspaceInfo = async () => {
+  const workspaceId = getActiveWorkspaceId();
+  if (!workspaceId) {
+    setActiveWorkspaceLabel("Personal workspace");
+    setActiveWorkspaceRole(null);
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+    setActiveWorkspaceRole(null);
+    return;
+  }
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/workspaces`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+      setActiveWorkspaceRole(null);
+      return;
+    }
+
+    const payload = await response.json();
+    const rows = Array.isArray(payload) ? payload : [];
+    const activeWorkspace = rows.find((workspace) => workspace.id === workspaceId);
+
+    if (activeWorkspace) {
+      setActiveWorkspaceLabel(activeWorkspace.name || `Workspace #${workspaceId}`);
+      setActiveWorkspaceRole(activeWorkspace.role || null);
+    } else {
+      setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+      setActiveWorkspaceRole(null);
+    }
+  } catch {
+    setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+    setActiveWorkspaceRole(null);
+  }
+ };
+
+ useEffect(() => {
+  loadActiveWorkspaceInfo();
+
+  const handleWorkspaceChanged = () => {
+    loadActiveWorkspaceInfo();
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === "querycraft_active_workspace_id_v1") {
+      loadActiveWorkspaceInfo();
+    }
+  };
+
+  window.addEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+    window.removeEventListener("storage", handleStorage);
+  };
+ }, []);
 
  const isDangerousSql = (sql: string) => {
   const normalized = sql.trim().toLowerCase();
@@ -74,7 +144,7 @@ const TestMode = () => {
 
         const response = await fetch(`${baseUrl}/execute`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: buildWorkspaceHeaders(token, true),
           body: JSON.stringify({ query: autoSQL }),
         });
         if(response.status === 401) {
@@ -157,7 +227,7 @@ const TestMode = () => {
 
     const response = await fetch(`${baseUrl}/execute`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: buildWorkspaceHeaders(token, true),
       body: JSON.stringify({ query: sqlInput }),
     });
     if(response.status === 401) {
@@ -211,6 +281,11 @@ const TestMode = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Test Mode</h1>
         <p className="text-sm text-muted-foreground">Write SQL queries, run them, and see the results instantly.</p>
+        <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Workspace:</span>
+          <span className="truncate max-w-[230px]">{activeWorkspaceLabel}</span>
+          {activeWorkspaceRole ? <span className="uppercase text-[10px]">({activeWorkspaceRole})</span> : null}
+        </div>
       </div>
 
       {/* Snippets */}

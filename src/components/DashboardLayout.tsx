@@ -11,17 +11,21 @@ import {
   User,
   Menu,
   GraduationCap,
-  FileText
+  FileText,
+  Users
 } from "@/components/icons";
 import { useState, useEffect, useRef } from "react";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { getApiBaseUrl } from "@/lib/appSettings";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/components/ui/use-toast";
+import { buildWorkspaceHeaders, WORKSPACE_CHANGED_EVENT } from "@/lib/workspace";
 
 const sidebarItems = [
   { icon: Database, label: "Dashboard", path: "/dashboard" },
   { icon: User, label: "Profile", path: "/profile" },
+  { icon: Users, label: "Team Workspaces", path: "/workspaces" },
   { icon: BookOpen, label: "Learn SQL", path: "/learn" },
   { icon: FlaskConical, label: "Practice SQL", path: "/test" },
   { icon: Terminal, label: "Developer Hub", path: "/developer" },
@@ -50,9 +54,7 @@ const DashboardLayout = () => {
     }
     try {
       const res = await fetch(`${getApiBaseUrl()}/schema`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: buildWorkspaceHeaders(token),
       });
       console.log("Fetch tables response:", res);
       if(res.status === 401) {
@@ -60,15 +62,40 @@ const DashboardLayout = () => {
         return;
       }
       const data = await res.json();
-      setTables(data);
+      setTables(Array.isArray(data) ? data : (data.tables || []));
     } catch (err) {
       console.error("Failed to fetch tables", err);
+      toast({
+        title: "Table load failed",
+        description: `Cannot connect to backend at ${getApiBaseUrl()}. Start backend server and refresh.`,
+        variant: "destructive",
+      });
     }
   };
 
   // ✅ Load schema on first mount
   useEffect(() => {
     fetchTables();
+  }, []);
+
+  useEffect(() => {
+    const handleWorkspaceChanged = () => {
+      fetchTables();
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "querycraft_active_workspace_id_v1") {
+        fetchTables();
+      }
+    };
+
+    window.addEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   // Extract username from token and hydrate profile data when available.

@@ -1,10 +1,11 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, ArrowRight, AlertCircle, Table2 } from "@/components/icons";
 import { DatabaseContext } from "@/context/DatabaseContext";
 import { useNavigate } from "react-router";
 import { recordProgressAttempt } from "@/lib/progress";
 import { getApiBaseUrl, getAppSettings } from "@/lib/appSettings";
+import { buildWorkspaceHeaders, getActiveWorkspaceId, WORKSPACE_CHANGED_EVENT } from "@/lib/workspace";
 
 // const sampleResults = [
 //   { id: 1, name: "Alice", email: "alice@example.com", age: 28 },
@@ -22,10 +23,79 @@ const LearnMode = () => {
   const [aiMessage, setAiMessage] = useState("");
   const [isRunnable, setIsRunnable] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
+  const [activeWorkspaceLabel, setActiveWorkspaceLabel] = useState("Personal workspace");
+  const [activeWorkspaceRole, setActiveWorkspaceRole] = useState<string | null>(null);
   const tableSettings = getAppSettings();
   const navigate = useNavigate();
 
   const { refreshTables } = useContext(DatabaseContext);
+
+  const loadActiveWorkspaceInfo = async () => {
+    const workspaceId = getActiveWorkspaceId();
+    if (!workspaceId) {
+      setActiveWorkspaceLabel("Personal workspace");
+      setActiveWorkspaceRole(null);
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+      setActiveWorkspaceRole(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/workspaces`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+        setActiveWorkspaceRole(null);
+        return;
+      }
+
+      const payload = await response.json();
+      const rows = Array.isArray(payload) ? payload : [];
+      const activeWorkspace = rows.find((workspace) => workspace.id === workspaceId);
+
+      if (activeWorkspace) {
+        setActiveWorkspaceLabel(activeWorkspace.name || `Workspace #${workspaceId}`);
+        setActiveWorkspaceRole(activeWorkspace.role || null);
+      } else {
+        setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+        setActiveWorkspaceRole(null);
+      }
+    } catch {
+      setActiveWorkspaceLabel(`Workspace #${workspaceId}`);
+      setActiveWorkspaceRole(null);
+    }
+  };
+
+  useEffect(() => {
+    loadActiveWorkspaceInfo();
+
+    const handleWorkspaceChanged = () => {
+      loadActiveWorkspaceInfo();
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "querycraft_active_workspace_id_v1") {
+        loadActiveWorkspaceInfo();
+      }
+    };
+
+    window.addEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(WORKSPACE_CHANGED_EVENT, handleWorkspaceChanged);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
   // const handleConvert = () => {
   //   if (!englishInput.trim()) return;
   //   setIsConverting(true);
@@ -96,10 +166,7 @@ const handleConvert = async () => {
 
     const response = await fetch(`${baseUrl}/query`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: buildWorkspaceHeaders(token, true),
 
       body: JSON.stringify({ text: englishInput }),
     });
@@ -179,6 +246,11 @@ const handleConvert = async () => {
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Learn Mode</h1>
         <p className="text-sm text-muted-foreground">Type what you want in plain English, and we'll convert it to SQL.</p>
+        <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Workspace:</span>
+          <span className="truncate max-w-[230px]">{activeWorkspaceLabel}</span>
+          {activeWorkspaceRole ? <span className="uppercase text-[10px]">({activeWorkspaceRole})</span> : null}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 h-[calc(100%-5rem)]">

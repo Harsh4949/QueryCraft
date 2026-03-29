@@ -52,6 +52,17 @@ function getApiErrorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
+function getReadableErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    if (error.message === "Failed to fetch") {
+      return `Cannot connect to backend at ${getApiBaseUrl()}. Start backend server and refresh.`;
+    }
+    return error.message;
+  }
+
+  return fallback;
+}
+
 const SavedQueries = () => {
   const navigate = useNavigate();
   const [queries, setQueries] = useState<SavedQuery[]>([]);
@@ -127,7 +138,7 @@ const SavedQueries = () => {
     } catch (error) {
       toast({
         title: "Load failed",
-        description: error instanceof Error ? error.message : "Unable to fetch saved queries",
+        description: getReadableErrorMessage(error, "Unable to fetch saved queries"),
         variant: "destructive",
       });
     } finally {
@@ -222,7 +233,7 @@ const SavedQueries = () => {
     } catch (error) {
       toast({
         title: "Save failed",
-        description: error instanceof Error ? error.message : "Could not save query",
+        description: getReadableErrorMessage(error, "Could not save query"),
         variant: "destructive",
       });
     } finally {
@@ -264,7 +275,7 @@ const SavedQueries = () => {
     } catch (error) {
       toast({
         title: "Delete failed",
-        description: error instanceof Error ? error.message : "Could not delete query",
+        description: getReadableErrorMessage(error, "Could not delete query"),
         variant: "destructive",
       });
     }
@@ -306,7 +317,7 @@ const SavedQueries = () => {
     } catch (error) {
       toast({
         title: "Update failed",
-        description: error instanceof Error ? error.message : "Could not update favorite",
+        description: getReadableErrorMessage(error, "Could not update favorite"),
         variant: "destructive",
       });
     }

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { getApiBaseUrl, getAppSettings, saveAppSettings } from "@/lib/appSettings";
 import { DatabaseContext } from "@/context/DatabaseContext";
+import { buildWorkspaceHeaders } from "@/lib/workspace";
 
 type Blueprint = {
   id: string;
@@ -251,10 +252,7 @@ const DeveloperMode = () => {
 
       const response = await fetch(`${getApiBaseUrl()}/execute`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: buildWorkspaceHeaders(token, true),
         body: JSON.stringify({ query: sql }),
       });
 
