@@ -117,9 +117,9 @@ const DashboardLayout = () => {
     <DatabaseContext.Provider
       value={{ tables, refreshTables: fetchTables }}
     >
-      <div className="min-h-screen bg-muted/30 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 dark:to-muted/10 flex flex-col">
         {/* Top Nav */}
-        <header className="h-14 bg-background border-b border-border flex items-center justify-between px-4 shrink-0 z-40">
+        <header className="h-14 bg-background/90 backdrop-blur-md border-b border-border/80 flex items-center justify-between px-4 shrink-0 z-40">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"

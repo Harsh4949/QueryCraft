@@ -127,8 +127,8 @@ const DashboardHome = () => {
   const lastActivity = useMemo(() => progressData?.attempts[0]?.dateISO, [progressData]);
 
   return (
-    <div className="max-w-6xl animate-fade-in">
-      <div className="mb-8">
+    <div className="max-w-6xl animate-fade-in space-y-5">
+      <div className="mb-2 rounded-2xl border border-border/70 bg-gradient-to-r from-primary/10 via-background to-secondary/10 dark:from-primary/15 dark:to-secondary/15 p-5 md:p-6 shadow-soft">
         <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground mb-2">
           Welcome back! 👋
         </h1>
@@ -139,9 +139,9 @@ const DashboardHome = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-xl bg-card border border-border p-4 shadow-card">
+          <div key={stat.label} className="rounded-xl bg-card border border-border p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-hover">
             <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center mb-3`}>
               <stat.icon className={`w-4 h-4 ${stat.color}`} />
             </div>
@@ -152,8 +152,8 @@ const DashboardHome = () => {
       </div>
 
       {/* Insights */}
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-200 hover:shadow-hover">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-4 h-4 text-primary" />
             <h3 className="font-heading font-bold text-foreground">Focus Recommendation</h3>
@@ -174,7 +174,7 @@ const DashboardHome = () => {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-200 hover:shadow-hover">
           <div className="flex items-center gap-2 mb-2">
             <AlertCircle className="w-4 h-4 text-secondary" />
             <h3 className="font-heading font-bold text-foreground">Recent Attempts</h3>

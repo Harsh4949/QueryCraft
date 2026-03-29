@@ -148,7 +148,7 @@ const Progress = () => {
 
   return (
     <div className="max-w-6xl animate-fade-in space-y-4">
-      <div>
+      <div className="rounded-2xl border border-border/70 bg-gradient-to-r from-primary/10 via-background to-secondary/10 dark:from-primary/15 dark:to-secondary/15 p-5 md:p-6 shadow-soft">
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">My Progress</h1>
         <p className="text-sm text-muted-foreground">
           Track your SQL learning journey and identify where to improve next.
@@ -167,7 +167,7 @@ const Progress = () => {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <Code2 className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-2xl font-heading font-bold text-foreground">{stats.totalAttempts}</p>
+            <p className="text-2xl font-heading font-bold text-foreground tracking-tight">{stats.totalAttempts}</p>
             <p className="text-xs text-muted-foreground">Total Attempts</p>
           </CardContent>
         </Card>
@@ -177,7 +177,7 @@ const Progress = () => {
             <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-3">
               <CheckCircle2 className="w-4 h-4 text-secondary" />
             </div>
-            <p className="text-2xl font-heading font-bold text-foreground">{stats.successRate}%</p>
+            <p className="text-2xl font-heading font-bold text-foreground tracking-tight">{stats.successRate}%</p>
             <p className="text-xs text-muted-foreground">Accuracy</p>
           </CardContent>
         </Card>
@@ -187,7 +187,7 @@ const Progress = () => {
             <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mb-3">
               <Clock className="w-4 h-4 text-accent" />
             </div>
-            <p className="text-2xl font-heading font-bold text-foreground">{formatDuration(stats.avgDurationSec)}</p>
+            <p className="text-2xl font-heading font-bold text-foreground tracking-tight">{formatDuration(stats.avgDurationSec)}</p>
             <p className="text-xs text-muted-foreground">Avg Query Time</p>
           </CardContent>
         </Card>
@@ -197,7 +197,7 @@ const Progress = () => {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <Zap className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-2xl font-heading font-bold text-foreground">{stats.currentStreak}d</p>
+            <p className="text-2xl font-heading font-bold text-foreground tracking-tight">{stats.currentStreak}d</p>
             <p className="text-xs text-muted-foreground">Current Streak</p>
           </CardContent>
         </Card>

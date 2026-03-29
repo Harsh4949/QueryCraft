@@ -286,7 +286,7 @@ const DeveloperMode = () => {
 
   return (
     <div className="max-w-6xl animate-fade-in space-y-6">
-      <div>
+      <div className="rounded-2xl border border-border/70 bg-gradient-to-r from-primary/10 via-background to-accent/10 dark:from-primary/15 dark:to-accent/15 p-5 md:p-6 shadow-soft">
         <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground mb-1">Developer Mode</h1>
         <p className="text-sm md:text-base text-muted-foreground">
           Build student projects faster with schema blueprints, project database setup guidance, and production-ready SQL query playbooks.
@@ -294,7 +294,7 @@ const DeveloperMode = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="border-border shadow-card">
+        <Card className="border-border shadow-card hover:shadow-hover transition-all duration-200">
           <CardContent className="p-4">
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
               <Table2 className="w-4 h-4 text-primary" />
@@ -304,7 +304,7 @@ const DeveloperMode = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-card">
+        <Card className="border-border shadow-card hover:shadow-hover transition-all duration-200">
           <CardContent className="p-4">
             <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
               <Database className="w-4 h-4 text-secondary" />
@@ -314,7 +314,7 @@ const DeveloperMode = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-card">
+        <Card className="border-border shadow-card hover:shadow-hover transition-all duration-200">
           <CardContent className="p-4">
             <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center mb-2">
               <Code2 className="w-4 h-4 text-accent" />

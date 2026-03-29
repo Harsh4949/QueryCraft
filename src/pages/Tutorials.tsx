@@ -131,7 +131,7 @@ const Tutorials = () => {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-6xl">
-      <div>
+      <div className="rounded-2xl border border-border/70 bg-gradient-to-r from-primary/10 via-background to-secondary/10 dark:from-primary/15 dark:to-secondary/15 p-5 md:p-6 shadow-soft">
         <h1 className="text-2xl font-heading font-bold text-foreground">SQL Tutorials</h1>
         <p className="text-muted-foreground mt-1">Interactive, structured lessons to help students learn SQL smoothly.</p>
       </div>
@@ -212,7 +212,7 @@ const Tutorials = () => {
       )}
 
       <div className="grid lg:grid-cols-[330px_1fr] gap-6">
-        <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-auto pr-1">
+        <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-auto pr-1 rounded-xl">
           {loading ? (
             Array.from({ length: 5 }).map((_, index) => (
               <div key={index} className="h-20 rounded-xl border border-border bg-card animate-pulse" />
@@ -228,7 +228,7 @@ const Tutorials = () => {
                   key={lesson.id}
                   onClick={() => setSelectedId(lesson.id)}
                   className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
-                    isSelected ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:shadow-card"
+                    isSelected ? "border-primary bg-primary/10 shadow-soft" : "border-border bg-card hover:shadow-card hover:-translate-y-0.5"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -259,7 +259,7 @@ const Tutorials = () => {
         <Card className="border-border shadow-card min-h-[460px]">
           {selectedLesson ? (
             <>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 border-b border-border/70 bg-muted/20 rounded-t-xl">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Badge variant="secondary">{selectedLesson.category}</Badge>
                   <Badge variant="outline">{selectedLesson.difficulty}</Badge>
