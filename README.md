@@ -1,144 +1,139 @@
-# QueryCraft (Frontend)
+# QueryCraft
 
-QueryCraft is a modern React-based SQL learning platform UI.
-It helps students learn, practice, and build SQL project workflows with a rich interface.
+QueryCraft is a full-stack SQL learning and practice platform with AI-assisted query generation, team workspaces, saved queries, and performance insights.
 
----
+## Repository Structure
 
-## What this repo contains
+- `QueryCraft/` — React + TypeScript + Vite frontend
+- `sql-ai-backend-hosted/` — Node.js + Express + PostgreSQL backend
+- `dockerfile` — Container build setup
 
-This repository contains **only the frontend app** (`QueryCraft/`) built with React + TypeScript + Vite.
+## Key Features
 
-Backend/API is managed separately in another repository.
-
----
-
-## Features
-
-- **Landing Page** with rich onboarding UI
-- **Auth screens** (Login/Register flow UI)
-- **Dashboard layout** with responsive sidebar navigation
-- **Learn Mode** for English-to-SQL workflow UI
-- **Test Mode** for manual SQL testing UI
-- **Developer Mode** for:
-  - schema blueprint references
-  - saved project API links
-  - SQL query playbooks
-  - inline query run actions (against configured API)
-- **Tutorials** with search/filter and lesson detail views
-- **Progress** tracking dashboard UI
-- **Settings** for API base URL, table display, safety toggles, etc.
-
----
+- English-to-SQL conversion (`Learn Mode`)
+- Manual SQL execution (`Test Mode`)
+- Team Workspaces with role-based access (`owner`, `editor`, `viewer`)
+- Workspace-aware schema/query execution
+- Saved Queries management
+- Profile management
+- Progress dashboard + Performance Insights
+  - execution time
+  - row count trends
+  - slow-query warnings
 
 ## Tech Stack
 
+### Frontend
 - React 18
 - TypeScript
-- Vite 8
+- Vite
 - Tailwind CSS
 - shadcn/ui + Radix UI
-- React Router
-- TanStack React Query
 - Recharts
-- Vitest
 
----
-
-## Project Structure
-
-```text
-QueryCraft/
-├── public/
-├── src/
-│   ├── components/
-│   ├── context/
-│   ├── hooks/
-│   ├── lib/
-│   ├── pages/
-│   ├── App.tsx
-│   └── main.tsx
-├── package.json
-└── vite.config.ts
-```
-
----
+### Backend
+- Node.js
+- Express
+- PostgreSQL (`pg`)
+- JWT authentication
+- bcrypt password hashing
 
 ## Prerequisites
 
 - Node.js 18+
 - npm 9+
+- PostgreSQL-compatible database (Neon/Postgres)
 
----
+## Environment Setup
 
-## Setup & Run
+### Backend (`sql-ai-backend-hosted/.env`)
 
-```bash
-npm install
-npm run dev
+```env
+JWT_SECRET=your_jwt_secret
+GROQ_API_KEY=your_groq_api_key
+DB_USER=your_db_user
+DB_HOST=your_db_host
+DB_NAME=your_db_name
+DB_PASSWORD=your_db_password
+DB_PORT=5432
+PORT=3000
 ```
 
-App runs by default at: `http://localhost:5173`
+### Frontend
 
----
+Default API base URL is already set to:
 
-## Environment Configuration
+`https://querycraft-backend-harsh.onrender.com`
 
-You can configure API base URL in either way:
-
-### Option 1: Build-time env
-Create `.env` in this repo:
+Users can override this in **Settings → API Settings** or via build-time env:
 
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
-### Option 2: Runtime Settings UI
-Open **Settings** page inside app and update **API Base URL**.
+## Local Development
 
-> Runtime settings override behavior for user flows like Learn/Test/Developer Mode query execution.
+Open two terminals:
 
----
+### 1) Start backend
 
-## Available Scripts
+```bash
+cd sql-ai-backend-hosted
+npm install
+npm run start
+```
 
-- `npm run dev` — start development server
-- `npm run build` — build production bundle
-- `npm run preview` — preview production build locally
-- `npm run lint` — run ESLint
-- `npm run test` — run unit tests (Vitest)
-- `npm run test:watch` — run tests in watch mode
+### 2) Start frontend
 
----
+```bash
+cd QueryCraft
+npm install
+npm run dev
+```
 
-## Important Notes
-
-- This frontend expects a compatible external API that supports auth and SQL endpoints.
-- Developer console helper functions are available only in dev mode:
-  - `qcQuery("SELECT * FROM table;")`
-  - `qcSelectAll("table_name")`
-  - `qcSchemaInfo()`
-
----
+Frontend runs on Vite dev server (typically `http://localhost:8080` in this project config).
 
 ## Build
 
+### Frontend production build
+
 ```bash
+cd QueryCraft
 npm run build
 ```
 
-This generates the production output in `dist/`.
+### Backend syntax check
 
----
+```bash
+cd sql-ai-backend-hosted
+node --check server.js
+```
 
-## Deployment
+## API Contract (high level)
 
-You can deploy this frontend to Vercel, Netlify, or any static hosting provider.
+Required backend endpoints used by frontend:
 
-Make sure your deployed app can reach your separately hosted backend API.
+- `POST /register`
+- `POST /login`
+- `GET /schema` (auth)
+- `POST /query` (auth)
+- `POST /execute` (auth)
+- `GET /me` (auth)
+- `PUT /me` (auth)
+- `GET /workspaces` (auth)
+- `POST /workspaces` (auth)
+- `GET /workspaces/:id/members` (auth)
+- `POST /workspaces/:id/members` (auth)
+- `GET /saved-queries` (auth)
+- `POST /saved-queries` (auth)
+- `PUT /saved-queries/:id` (auth)
+- `DELETE /saved-queries/:id` (auth)
+- `POST /saved-queries/:id/run` (auth)
 
----
+Optional:
+
+- `GET /tutorials` (frontend falls back to local tutorial data if missing)
 
 ## License
 
-ISC
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
